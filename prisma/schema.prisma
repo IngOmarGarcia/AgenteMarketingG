@@ -1,0 +1,100 @@
+// Fase 1 — Núcleo de datos para `strategy` + `ai-core`.
+// Solo incluye lo que BrainService necesita para reconstruir memoria histórica.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Sector {
+  ECOMMERCE
+  SAAS
+  HEALTH
+  EDUCATION
+  REAL_ESTATE
+  HOSPITALITY
+  FINANCE
+  PROFESSIONAL_SERVICES
+  OTHER
+}
+
+enum StrategyStatus {
+  DRAFT
+  GENERATING
+  READY
+  APPROVED
+  ARCHIVED
+  FAILED
+}
+
+enum OutcomeStatus {
+  SUCCESS
+  NEUTRAL
+  FAILURE
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  name      String
+  sector    Sector
+  website   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  strategies Strategy[]
+
+  @@index([sector])
+}
+
+model Strategy {
+  id       String @id @default(cuid())
+  clientId String
+
+  /// Desnormalizado desde Client: permite filtrar por sector sin JOIN
+  /// en el hot path de BrainService. Se escribe una vez, al crear.
+  sector Sector
+
+  status    StrategyStatus @default(DRAFT)
+  title     String
+  /// Payload validado contra StrategyOutputSchema (ai-core/schemas).
+  content   Json
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  client  Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  outcome StrategyOutcome?
+
+  @@index([clientId, createdAt(sort: Desc)])
+  @@index([sector, status])
+}
+
+model StrategyOutcome {
+  id         String @id @default(cuid())
+  strategyId String @unique
+
+  /// Desnormalizado desde Strategy. Es lo que hace que la consulta de
+  /// memoria histórica sea un único index scan sin JOIN previo al filtro.
+  sector Sector
+
+  status           OutcomeStatus
+  /// 0–100. Normalizado por el módulo de analytics.
+  performanceScore Float
+  /// Métricas crudas (roas, ctr, cpl, conversiones...). Solo para auditoría,
+  /// NO se inyecta al prompt.
+  metrics          Json
+  /// Texto corto y accionable. ESTO es lo que se inyecta como memoria.
+  learnings        String        @db.Text
+  measuredAt       DateTime
+
+  strategy Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+  /// Índice compuesto que cubre exactamente el WHERE + ORDER BY de
+  /// BrainService.getHistoricalMemory(). Sin este índice la consulta
+  /// degrada a seq scan + sort en cuanto la tabla crece.
+  @@index([sector, status, performanceScore(sort: Desc)])
+  @@index([measuredAt(sort: Desc)])
+}
