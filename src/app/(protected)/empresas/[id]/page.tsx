@@ -7,7 +7,11 @@ import { actualizarEmpresaAction } from "@/modules/clientes/actions";
 import { lineasATexto } from "@/modules/clientes/schemas";
 import { EmpresaForm } from "@/app/(protected)/empresas/empresa-form";
 import { GenerarBoton } from "@/app/(protected)/empresas/[id]/generar-boton";
-import { claseTarjeta, EstadoBadge } from "@/components/estado-estrategia";
+import {
+  claseTarjeta,
+  claseTono,
+  EstadoBadge,
+} from "@/components/estado-estrategia";
 
 /**
  * La generación corre SÍNCRONA dentro de la Server Action y puede pasar de dos
@@ -88,9 +92,11 @@ export default async function EmpresaPage({
         </p>
       </header>
 
-      <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      {/* Neutro: los contenedores no informan de ningún estado. El color se
+          reserva para el historial de abajo, donde cada tarjeta SÍ dice algo. */}
+      <section className={claseTono("neutral", "rounded-lg p-6")}>
         <h2 className="text-lg font-medium">Generar estrategia</h2>
-        <p className="mt-1 mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 mb-4 text-sm opacity-70">
           Usa el brief de abajo, la memoria histórica de otras empresas del mismo
           sector y ningún dato más.
         </p>
@@ -146,9 +152,9 @@ export default async function EmpresaPage({
         )}
       </section>
 
-      <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      <section className={claseTono("neutral", "rounded-lg p-6")}>
         <h2 className="text-lg font-medium">Brief</h2>
-        <p className="mt-1 mb-5 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 mb-5 text-sm opacity-70">
           Es literalmente lo que lee el modelo. Cambiarlo no altera las
           estrategias ya generadas.
         </p>

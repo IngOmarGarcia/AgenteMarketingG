@@ -24,7 +24,7 @@
 
 /* --- FONDO ANIMADO CON DEGRADADO EN MOVIMIENTO --- */
 body {
-  background: linear-gradient(135deg, #000000, #4271bd, #f08b39a9);
+  background: linear-gradient(135deg, #000000, #4271bd, #991801);
   background-size: 300% 300%;
   animation: gradientBackground 12s ease infinite;
   color: var(--foreground);
@@ -145,6 +145,25 @@ body {
   box-shadow: 0 12px 40px rgba(220, 38, 38, 0.3);
 }
 
+/* Gris pizarra translúcido para tarjetas SIN estado: una empresa no está bien
+   ni mal, solo existe. Con el azul competían por atención con las que sí
+   informan de algo, y en una lista larga eso cansa la vista.
+
+   Fija su propio `color` a propósito. Es la única variante oscura, y el fondo
+   del body es un degradado oscuro en los DOS esquemas, así que heredar
+   `--foreground` dejaría azul marino (#04236b) sobre gris oscuro en modo claro:
+   ilegible. Con la tarjeta siempre oscura, el texto siempre claro es lo
+   correcto, no una excepción. */
+.glass-card--neutral {
+  background-color: rgba(15, 23, 42, 0.5);
+  border-color: rgba(148, 163, 184, 0.22);
+  color: #e2e8f0;
+}
+.glass-card--neutral:hover {
+  border-color: rgba(203, 213, 225, 0.55);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
 /* En oscuro el tinte necesita algo más de cuerpo para leerse sobre el fondo
    en degradado, que ya es azul oscuro de por sí. */
 @media (prefers-color-scheme: dark) {
@@ -156,6 +175,9 @@ body {
   }
   .glass-card--error {
     background-color: rgba(239, 68, 68, 0.2);
+  }
+  .glass-card--neutral {
+    background-color: rgba(2, 6, 23, 0.55);
   }
 }
 

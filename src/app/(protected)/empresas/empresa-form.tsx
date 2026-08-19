@@ -5,6 +5,15 @@ import { useFormStatus } from "react-dom";
 
 import type { AccionResultado } from "@/modules/clientes/actions";
 
+/**
+ * Mismo campo translúcido que el formulario de invitación. La tarjeta que los
+ * contiene es oscura, así que un `bg-white` opaco abriría un boquete en ella.
+ * El color del texto se fuerza en vez de heredarse: `--foreground` es azul
+ * marino en modo claro y quedaría ilegible sobre el campo.
+ */
+const INPUT =
+  "mt-1 w-full rounded-md border border-white/25 bg-white/70 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-[var(--primary)] dark:bg-white/10 dark:text-zinc-50";
+
 const SECTORES = [
   ["SAAS", "SaaS"],
   ["ECOMMERCE", "E-commerce"],
@@ -66,7 +75,7 @@ export function EmpresaForm({
           <select
             name="sector"
             defaultValue={valores.sector ?? "SAAS"}
-            className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            className={INPUT}
           >
             {SECTORES.map(([valor, etiqueta]) => (
               <option key={valor} value={valor}>
@@ -144,8 +153,8 @@ export function EmpresaForm({
         <p
           className={`rounded-md px-3 py-2 text-sm ${
             resultado.ok
-              ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-              : "bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300"
+              ? "glass-card glass-card--ok animate-fade-in"
+              : "glass-card glass-card--error animate-fade-in"
           }`}
         >
           {resultado.mensaje}
@@ -166,7 +175,11 @@ function BotonEnviar({ texto }: { texto: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-white dark:text-zinc-900"
+      // Azul de marca, igual que el de invitación: sobre la tarjeta oscura un
+      // `bg-zinc-900` se confundía con el fondo y no parecía pulsable.
+      className={`rounded-lg bg-[var(--primary)] px-6 py-2.5 text-sm font-semibold text-[var(--primary-foreground)] shadow-[0_8px_24px_rgba(37,99,235,0.45)] disabled:cursor-not-allowed disabled:opacity-60 ${
+        pending ? "" : "hover-scale"
+      }`}
     >
       {pending ? "Guardando…" : texto}
     </button>
@@ -186,7 +199,7 @@ function Campo({
       <span className="text-sm font-medium">{etiqueta}</span>
       <input
         name={nombre}
-        className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+        className={INPUT}
         {...props}
       />
     </label>
@@ -216,7 +229,7 @@ function Area({
       <textarea
         name={nombre}
         rows={filas}
-        className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+        className={INPUT}
         {...props}
       />
     </label>

@@ -23,10 +23,16 @@ export const ETIQUETA_ESTADO: Readonly<Record<StrategyStatus, string>> = {
 };
 
 /**
- * Tono de la tarjeta. Tres estados de ánimo, no seis colores:
- * azul lo que está en marcha, verde lo terminado, rojo lo que falló.
+ * Tono de la tarjeta. Cuatro registros, no seis colores:
+ * azul lo que está en marcha, verde lo terminado, rojo lo que falló, y gris
+ * lo que sencillamente no tiene estado.
+ *
+ * `neutral` no aparece en `TONO_POR_ESTADO`: ninguna estrategia es neutra,
+ * siempre está en alguna fase. Lo usan las fichas de empresa y los contenedores
+ * de formulario, que no informan de nada por sí mismos y no deben competir por
+ * la atención con los que sí.
  */
-export type TonoEstado = "info" | "ok" | "error";
+export type TonoEstado = "info" | "ok" | "error" | "neutral";
 
 const TONO_POR_ESTADO: Readonly<Record<StrategyStatus, TonoEstado>> = {
   DRAFT: "info",
@@ -45,6 +51,7 @@ const CLASE_TONO: Readonly<Record<TonoEstado, string>> = {
   info: "glass-card--info",
   ok: "glass-card--ok",
   error: "glass-card--error",
+  neutral: "glass-card--neutral",
 };
 
 /**
@@ -67,6 +74,7 @@ const CLASE_DISTINTIVO: Readonly<Record<TonoEstado, string>> = {
   info: "bg-blue-500/20 text-blue-100 ring-1 ring-blue-400/40",
   ok: "bg-emerald-500/20 text-emerald-100 ring-1 ring-emerald-400/40",
   error: "bg-red-500/25 text-red-100 ring-1 ring-red-400/50",
+  neutral: "bg-slate-500/25 text-slate-100 ring-1 ring-slate-400/40",
 };
 
 /** Distintivo de estado. Mismo lenguaje de color que la tarjeta que lo contiene. */
