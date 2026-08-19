@@ -1,4 +1,4 @@
-import type { Role } from "@prisma/client";
+import type { Role, StrategyStatus } from "@prisma/client";
 
 /**
  * Núcleo de decisión de acceso. Función pura: sin base de datos, sin cookies,
@@ -97,4 +97,33 @@ export function puedeGenerarPara(
 ): boolean {
   if (profile.role === "CLIENTE") return profile.clientId === clientId;
   return true;
+}
+
+/**
+ * Estados que un CLIENTE puede ver. El resto son internos del equipo: enseñarle
+ * un FAILED o un GENERATING sería exponerle un problema operativo nuestro sobre
+ * el que no puede hacer nada.
+ */
+const ESTADOS_VISIBLES_PARA_CLIENTE: readonly StrategyStatus[] = [
+  "READY",
+  "APPROVED",
+];
+
+/**
+ * Quién puede abrir una estrategia concreta.
+ *
+ * ADMIN y COLABORADOR ven cualquiera en cualquier estado — revisar borradores y
+ * diagnosticar fallos ES su trabajo. Un CLIENTE solo las de su empresa y solo
+ * las terminadas.
+ *
+ * Lo que esta función rechaza debe responderse con `notFound()`, no con un 403:
+ * un 403 confirma que la estrategia existe, y eso ya es información.
+ */
+export function puedeVerEstrategia(
+  profile: Pick<ProfileSnapshot, "role" | "clientId">,
+  estrategia: { clientId: string; status: StrategyStatus },
+): boolean {
+  if (profile.role !== "CLIENTE") return true;
+  if (profile.clientId !== estrategia.clientId) return false;
+  return ESTADOS_VISIBLES_PARA_CLIENTE.includes(estrategia.status);
 }

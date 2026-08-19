@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { Role } from "@prisma/client";
+import type { Role, StrategyStatus } from "@prisma/client";
 
 import {
   dashboardPathFor,
   decideAccess,
   isClienteSinEmpresa,
   puedeGenerarPara,
+  puedeVerEstrategia,
   type ProfileSnapshot,
 } from "@/lib/auth/policy";
 
@@ -103,4 +104,49 @@ test("un CLIENTE sin empresa no puede generar para ninguna", () => {
 test("ADMIN y COLABORADOR pueden generar para cualquier empresa", () => {
   assert.equal(puedeGenerarPara(perfil({ role: "ADMIN" }), "cli_9"), true);
   assert.equal(puedeGenerarPara(perfil({ role: "COLABORADOR" }), "cli_9"), true);
+});
+
+// ── Visibilidad de una estrategia ─────────────────────────────────────────
+
+const VISIBLE = { clientId: "cli_1", status: "READY" as StrategyStatus };
+
+test("ADMIN y COLABORADOR ven cualquier estrategia en cualquier estado", () => {
+  for (const role of ["ADMIN", "COLABORADOR"] as const) {
+    assert.equal(puedeVerEstrategia(perfil({ role }), VISIBLE), true);
+    assert.equal(
+      puedeVerEstrategia(perfil({ role }), { clientId: "cli_9", status: "FAILED" }),
+      true,
+      `${role} debería ver los fallos: son su trabajo`,
+    );
+  }
+});
+
+test("un CLIENTE ve las de su empresa en READY y APPROVED", () => {
+  const p = perfil({ role: "CLIENTE", clientId: "cli_1" });
+  assert.equal(puedeVerEstrategia(p, VISIBLE), true);
+  assert.equal(
+    puedeVerEstrategia(p, { clientId: "cli_1", status: "APPROVED" }),
+    true,
+  );
+});
+
+test("un CLIENTE no ve las de otra empresa", () => {
+  const p = perfil({ role: "CLIENTE", clientId: "cli_1" });
+  assert.equal(puedeVerEstrategia(p, { clientId: "cli_2", status: "READY" }), false);
+});
+
+test("un CLIENTE no ve los estados internos de su propia empresa", () => {
+  const p = perfil({ role: "CLIENTE", clientId: "cli_1" });
+  for (const status of ["DRAFT", "GENERATING", "FAILED", "ARCHIVED"] as const) {
+    assert.equal(
+      puedeVerEstrategia(p, { clientId: "cli_1", status }),
+      false,
+      `un CLIENTE no debería ver una estrategia en ${status}`,
+    );
+  }
+});
+
+test("un CLIENTE sin empresa no ve ninguna estrategia", () => {
+  const p = perfil({ role: "CLIENTE", clientId: null });
+  assert.equal(puedeVerEstrategia(p, VISIBLE), false);
 });
