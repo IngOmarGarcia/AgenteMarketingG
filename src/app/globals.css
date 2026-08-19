@@ -24,7 +24,7 @@
 
 /* --- FONDO ANIMADO CON DEGRADADO EN MOVIMIENTO --- */
 body {
-  background: linear-gradient(135deg, #000000, #4271bd, #991801);
+  background: linear-gradient(135deg, #000000, #4271bd, #3f0a01);
   background-size: 300% 300%;
   animation: gradientBackground 12s ease infinite;
   color: var(--foreground);
@@ -179,6 +179,49 @@ body {
   .glass-card--neutral {
     background-color: rgba(2, 6, 23, 0.55);
   }
+}
+
+/* --- CAMPOS DE FORMULARIO ---
+   Un único sitio para todos los inputs, selects y textareas del sistema.
+   Estaban definidos a mano en cinco ficheros y ya se habían desincronizado en
+   dos de ellos.
+
+   Solo colores, borde y foco: el tamaño, el espaciado y el redondeo se dejan a
+   Tailwind en cada sitio. Es a propósito — este CSS va SIN capa, así que gana a
+   las utilidades de Tailwind (`@layer utilities`), y toda propiedad que declare
+   aquí queda imposible de ajustar con una clase suelta. */
+.field {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background-color: rgba(15, 23, 42, 0.45);
+  color: #e2e8f0;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.field::placeholder {
+  color: rgba(226, 232, 240, 0.45);
+}
+
+.field:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
+}
+
+.field:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* El desplegable de un <select> lo dibuja el sistema operativo, no la página:
+   no hereda el vidrio y NO puede ser translúcido. Sin un color explícito aquí,
+   Chrome pinta las opciones con el color casi blanco del select sobre el fondo
+   blanco del popup, y el texto desaparece. Este era el bug reportado. */
+.field option,
+.field optgroup {
+  background-color: #0f172a;
+  color: #e2e8f0;
 }
 
 /* --- MOVIMIENTO REDUCIDO ---

@@ -8,7 +8,7 @@ import { createSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
 const MIN_LONGITUD = 8;
 
 const INPUT =
-  "mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900";
+  "field mt-1 w-full rounded-md px-3 py-2 text-sm";
 
 export function SetPasswordForm() {
   const router = useRouter();
@@ -86,7 +86,7 @@ export function SetPasswordForm() {
       <button
         type="submit"
         disabled={cargando}
-        className="w-full rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+        className="w-full rounded-lg bg-[var(--primary)] px-3 py-2.5 text-sm font-semibold text-[var(--primary-foreground)] shadow-[0_8px_24px_rgba(37,99,235,0.45)] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {cargando ? "Guardando…" : "Guardar y entrar"}
       </button>

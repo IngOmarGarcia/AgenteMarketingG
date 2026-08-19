@@ -5,14 +5,9 @@ import { useFormStatus } from "react-dom";
 
 import type { AccionResultado } from "@/modules/clientes/actions";
 
-/**
- * Mismo campo translúcido que el formulario de invitación. La tarjeta que los
- * contiene es oscura, así que un `bg-white` opaco abriría un boquete en ella.
- * El color del texto se fuerza en vez de heredarse: `--foreground` es azul
- * marino en modo claro y quedaría ilegible sobre el campo.
- */
+/** Estilo compartido en globals.css: ver `.field`. */
 const INPUT =
-  "mt-1 w-full rounded-md border border-white/25 bg-white/70 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-[var(--primary)] dark:bg-white/10 dark:text-zinc-50";
+  "field mt-1 w-full rounded-md px-3 py-2 text-sm";
 
 const SECTORES = [
   ["SAAS", "SaaS"],

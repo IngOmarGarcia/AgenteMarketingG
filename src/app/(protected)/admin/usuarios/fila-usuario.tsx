@@ -86,7 +86,7 @@ export function FilaUsuario({
               <select
                 name="role"
                 defaultValue={perfil.role}
-                className="rounded-md border border-white/25 bg-white/70 px-2 py-1 text-sm text-zinc-900 dark:bg-white/10 dark:text-zinc-50"
+                className="field rounded-md px-2 py-1 text-sm"
               >
                 <option value="ADMIN">Administrador</option>
                 <option value="COLABORADOR">Colaborador</option>
@@ -97,7 +97,7 @@ export function FilaUsuario({
                 defaultValue={
                   empresas.find((e) => e.name === perfil.empresaNombre)?.id ?? ""
                 }
-                className="rounded-md border border-white/25 bg-white/70 px-2 py-1 text-sm text-zinc-900 dark:bg-white/10 dark:text-zinc-50"
+                className="field rounded-md px-2 py-1 text-sm"
               >
                 <option value="">Sin empresa</option>
                 {empresas.map((e) => (

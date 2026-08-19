@@ -7,13 +7,9 @@ import {
   type AccionResultado,
 } from "@/modules/usuarios/actions";
 
-/**
- * Campos translúcidos para que se apoyen sobre el vidrio de la tarjeta en vez
- * de abrir agujeros blancos en él. El texto se fuerza oscuro sobre el fondo
- * claro: heredarlo dejaría letra clara sobre fondo claro en modo claro.
- */
+/** Estilo compartido en globals.css: ver `.field`. */
 const INPUT =
-  "mt-1 w-full rounded-md border border-white/25 bg-white/70 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-[var(--primary)] dark:bg-white/10 dark:text-zinc-50";
+  "field mt-1 w-full rounded-md px-3 py-2 text-sm";
 
 export function InvitarUsuarioForm({
   empresas,
