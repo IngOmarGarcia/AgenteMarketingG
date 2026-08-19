@@ -14,7 +14,8 @@ import { z } from "zod";
  */
 const envSchema = z.object({
   DATABASE_URL: z.string().url(),
-  ANTHROPIC_API_KEY: z.string().min(1, "ANTHROPIC_API_KEY es obligatoria"),
+  /** Obligatoria solo con AI_PROVIDER=anthropic. Ver el superRefine de abajo. */
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
 
   NEXT_PUBLIC_SUPABASE_URL: z
     .string()
@@ -36,7 +37,28 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
-});
+
+  /** Qué proveedor atiende las generaciones. */
+  AI_PROVIDER: z.enum(["anthropic", "ollama"]).default("anthropic"),
+
+  /** Requiere `ollama serve` corriendo. Solo se usa con AI_PROVIDER=ollama. */
+  OLLAMA_BASE_URL: z.string().url().default("http://localhost:11434"),
+  OLLAMA_MODEL: z.string().min(1).default("qwen2.5:latest"),
+})
+  .superRefine((val, ctx) => {
+    // La clave es opcional en el objeto y obligatoria AQUÍ. Dejarla `.optional()`
+    // a secas permitiría arrancar en modo Anthropic sin clave, y el fallo
+    // aparecería dentro de una llamada a la API — justo lo que este módulo
+    // existe para evitar.
+    if (val.AI_PROVIDER === "anthropic" && !val.ANTHROPIC_API_KEY) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["ANTHROPIC_API_KEY"],
+        message:
+          "es obligatoria con AI_PROVIDER=anthropic. Para trabajar en local sin coste, pon AI_PROVIDER=ollama.",
+      });
+    }
+  });
 
 export type Env = z.infer<typeof envSchema>;
 
