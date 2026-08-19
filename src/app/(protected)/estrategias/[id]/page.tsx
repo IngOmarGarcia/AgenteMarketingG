@@ -115,10 +115,24 @@ function Cuerpo({
 
   if (status === StrategyStatus.FAILED) {
     return (
-      <Aviso tono="rojo" titulo="La generación falló">
-        <p>Esta estrategia no llegó a completarse.</p>
-        {failureReason && (
-          <p className="mt-2 font-mono text-xs break-words">{failureReason}</p>
+      <Aviso tono="rojo" titulo="La generación no llegó a completarse">
+        <p>
+          Algo falló mientras se generaba esta estrategia, así que no hay
+          contenido que mostrar. Puedes lanzar una nueva desde la ficha de la
+          empresa.
+        </p>
+
+        {/* El motivo crudo es diagnóstico, no mensaje, y solo para el equipo:
+            a un cliente no le dice nada y puede arrastrar detalles internos. */}
+        {esDelEquipo && failureReason && (
+          <details className="mt-3">
+            <summary className="cursor-pointer text-xs opacity-70 hover:opacity-100">
+              Detalle técnico
+            </summary>
+            <p className="mt-1 font-mono text-xs break-words opacity-80">
+              {failureReason}
+            </p>
+          </details>
         )}
       </Aviso>
     );
@@ -128,7 +142,7 @@ function Cuerpo({
 
   if (!parsed.success) {
     return (
-      <Aviso tono="ámbar" titulo="El contenido no tiene el formato esperado">
+      <Aviso tono="rojo" titulo="El contenido no tiene el formato esperado">
         <p>
           La estrategia está guardada, pero no valida contra el schema actual.
           Suele ser contenido creado antes de un cambio de formato.
@@ -150,11 +164,11 @@ function Cuerpo({
   );
 }
 
+/** Mismas variantes de vidrio que las tarjetas de estado, para que un aviso y
+ *  la tarjeta que llevó hasta él hablen el mismo idioma de color. */
 const TONOS = {
-  azul: "border-blue-200 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-950/30",
-  rojo: "border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-950/30",
-  ámbar:
-    "border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/30",
+  azul: "glass-card--info",
+  rojo: "glass-card--error",
 } as const;
 
 function Aviso({
@@ -167,11 +181,9 @@ function Aviso({
   children: React.ReactNode;
 }) {
   return (
-    <div className={`rounded-lg border p-6 ${TONOS[tono]}`}>
+    <div className={`glass-card animate-fade-in rounded-lg p-6 ${TONOS[tono]}`}>
       <h2 className="font-medium">{titulo}</h2>
-      <div className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
-        {children}
-      </div>
+      <div className="mt-2 text-sm opacity-90">{children}</div>
     </div>
   );
 }

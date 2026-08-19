@@ -1,26 +1,184 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --background: #f8fafc;
+  --foreground: #04236b;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  /* Fondo translúcido para efecto cristal en modo claro */
+  --card-bg: rgba(255, 255, 255, 0.7); 
+  --card-border: rgba(226, 232, 240, 0.8);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #031e5c;
+    --foreground: #f1f5f9;
+    --primary: #3b82f6;
+    --primary-foreground: #ffffff;
+    /* Fondo translúcido para modo oscuro */
+    --card-bg: rgba(20, 50, 110, 0.45); 
+    --card-border: rgba(255, 255, 255, 0.12);
   }
 }
 
+/* --- FONDO ANIMADO CON DEGRADADO EN MOVIMIENTO --- */
 body {
-  background: var(--background);
+  background: linear-gradient(135deg, #000000, #4271bd, #f08b39a9);
+  background-size: 300% 300%;
+  animation: gradientBackground 12s ease infinite;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes gradientBackground {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* --- TARJETAS CON EFECTO ESPEJO / VIDRIO REAL (Declarado una sola vez) --- */
+.glass-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
+  transition: all 0.25s ease-in-out;
+}
+
+.glass-card:hover {
+  background-color: var(--card-bg);
+  border-color: var(--primary);
+  box-shadow: 0 12px 40px 0 rgba(37, 99, 235, 0.3);
+  transform: translateY(-2px); /* Eleva ligeramente la tarjeta al pasar el mouse */
+}
+
+/* --- SCROLLBAR --- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(199, 59, 59, 0.418);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(49, 49, 49, 0.4);
+}
+
+/* --- ANIMACIONES GENERALES --- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.02); }
+}
+
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: floatSlow 4s ease-in-out infinite;
+}
+
+/* --- CLASES DE HOVER ADICIONALES --- */
+.hover-scale {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-scale:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* --- VARIANTES DE ESTADO ---
+   Se aplican JUNTO a .glass-card, nunca en su lugar: el desenfoque, la sombra
+   y la elevación al hover se definen una sola vez arriba y aquí solo cambia el
+   tinte. Así una tarjeta roja y una verde siguen siendo el mismo material.
+
+   Azul = en marcha (borrador, generando, archivada).
+   Verde = terminada (lista, aprobada).
+   Rojo  = fallida. */
+.glass-card--info {
+  background-color: rgba(37, 99, 235, 0.14);
+  border-color: rgba(37, 99, 235, 0.38);
+}
+.glass-card--info:hover {
+  border-color: rgba(59, 130, 246, 0.85);
+  box-shadow: 0 12px 40px rgba(37, 99, 235, 0.35);
+}
+
+.glass-card--ok {
+  background-color: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.38);
+}
+.glass-card--ok:hover {
+  border-color: rgba(16, 185, 129, 0.85);
+  box-shadow: 0 12px 40px rgba(16, 185, 129, 0.3);
+}
+
+.glass-card--error {
+  background-color: rgba(220, 38, 38, 0.16);
+  border-color: rgba(220, 38, 38, 0.42);
+}
+.glass-card--error:hover {
+  border-color: rgba(239, 68, 68, 0.85);
+  box-shadow: 0 12px 40px rgba(220, 38, 38, 0.3);
+}
+
+/* En oscuro el tinte necesita algo más de cuerpo para leerse sobre el fondo
+   en degradado, que ya es azul oscuro de por sí. */
+@media (prefers-color-scheme: dark) {
+  .glass-card--info {
+    background-color: rgba(59, 130, 246, 0.22);
+  }
+  .glass-card--ok {
+    background-color: rgba(16, 185, 129, 0.18);
+  }
+  .glass-card--error {
+    background-color: rgba(239, 68, 68, 0.2);
+  }
+}
+
+/* --- MOVIMIENTO REDUCIDO ---
+   El fondo en degradado y el pulso de "generando" son animaciones infinitas, y
+   son exactamente las que provocan mareo a quien tiene activada esta
+   preferencia del sistema. Se apagan; los colores se quedan. */
+@media (prefers-reduced-motion: reduce) {
+  body,
+  .animate-fade-in,
+  .animate-pulse-glow,
+  .animate-float {
+    animation: none;
+  }
+  .animate-fade-in {
+    opacity: 1;
+  }
+  .glass-card,
+  .hover-scale {
+    transition: none;
+  }
+  .glass-card:hover,
+  .hover-scale:hover {
+    transform: none;
+  }
 }

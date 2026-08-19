@@ -59,7 +59,7 @@ export default async function EmpresasPage() {
                     </span>
                   </div>
                   <div className="text-sm text-zinc-500 tabular-nums dark:text-zinc-400">
-                    {e.monthlyBudgetEur.toLocaleString("es-ES")} €/mes ·{" "}
+                    {e.monthlyBudgetEur.toLocaleString("es-US")} $/mes ·{" "}
                     {e._count.strategies}{" "}
                     {e._count.strategies === 1 ? "estrategia" : "estrategias"}
                   </div>

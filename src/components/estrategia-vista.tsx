@@ -65,7 +65,7 @@ export function EstrategiaVista({
       {strategy.channelMix.length > 0 && (
         <Seccion
           titulo="Reparto por canal"
-          nota={`Sobre ${presupuestoMensualEur.toLocaleString("es-ES")} €/mes`}
+          nota={`Sobre ${presupuestoMensualEur.toLocaleString("es-US")} $/mes`}
         >
           <ul className="space-y-4">
             {strategy.channelMix.map((c, i) => {
@@ -90,7 +90,7 @@ export function EstrategiaVista({
                     </div>
                     <span className="text-sm tabular-nums">
                       <span className="font-medium">
-                        {euros.toLocaleString("es-ES")} €
+                        {euros.toLocaleString("es-US")} $
                       </span>
                       <span className="ml-2 text-zinc-500 dark:text-zinc-400">
                         {c.budgetShare}%

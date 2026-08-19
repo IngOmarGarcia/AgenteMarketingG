@@ -2,6 +2,7 @@ import Link from "next/link";
 import { StrategyStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
+import { claseTarjeta, EstadoBadge } from "@/components/estado-estrategia";
 
 /** Estados sobre los que el colaborador tiene trabajo pendiente. */
 const EN_CURSO = [
@@ -10,24 +11,6 @@ const EN_CURSO = [
   StrategyStatus.READY,
   StrategyStatus.FAILED,
 ] as const;
-
-const ETIQUETA: Readonly<Record<StrategyStatus, string>> = {
-  DRAFT: "Borrador",
-  GENERATING: "Generando",
-  READY: "Lista para revisar",
-  APPROVED: "Aprobada",
-  ARCHIVED: "Archivada",
-  FAILED: "Fallida",
-};
-
-const COLOR: Readonly<Record<StrategyStatus, string>> = {
-  DRAFT: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
-  GENERATING: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
-  READY: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-  APPROVED: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-  ARCHIVED: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
-  FAILED: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
-};
 
 /**
  * Espacio operativo interno: la cola de trabajo del equipo.
@@ -67,10 +50,7 @@ export default async function ColaboradorPage() {
       ) : (
         <ul className="space-y-3">
           {estrategias.map((e) => (
-            <li
-              key={e.id}
-              className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
-            >
+            <li key={e.id} className={claseTarjeta(e.status, "rounded-lg p-4")}>
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <div>
                   <h2 className="font-medium">
@@ -78,17 +58,13 @@ export default async function ColaboradorPage() {
                       {e.title}
                     </Link>
                   </h2>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  <p className="text-sm opacity-70">
                     {e.client.name} · {e.client.sector}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${COLOR[e.status]}`}
-                  >
-                    {ETIQUETA[e.status]}
-                  </span>
-                  <time className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <EstadoBadge status={e.status} />
+                  <time className="text-xs opacity-70">
                     {e.updatedAt.toLocaleDateString("es-ES")}
                   </time>
                 </div>

@@ -8,6 +8,7 @@ import {
   generateStrategyAction,
   type GenerateStrategyActionResult,
 } from "@/modules/strategy/actions/generate-strategy.action";
+import { mensajeParaUsuario } from "@/modules/strategy/mensajes-error";
 
 /**
  * Disparador de la generación.
@@ -112,15 +113,35 @@ export function GenerarBoton({
         </p>
       )}
 
-      {resultado && !resultado.ok && (
-        <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800 dark:bg-red-950/40 dark:text-red-300">
-          <p>{resultado.message}</p>
-          {resultado.retryable && (
-            <p className="mt-1 text-red-700 dark:text-red-400">
-              Es un fallo transitorio: puedes volver a intentarlo.
-            </p>
-          )}
-        </div>
+      {resultado && !resultado.ok && <ErrorGeneracion resultado={resultado} />}
+    </div>
+  );
+}
+
+/**
+ * Traduce el fallo a lenguaje de persona.
+ *
+ * Lo que devuelve la acción está escrito para diagnosticar —"429 tras
+ * reintentos", "stop_reason max_tokens"—, y eso en pantalla no le dice a nadie
+ * si la culpa es suya, si puede reintentar o si tiene que llamar a alguien. El
+ * texto original no se pierde: sigue entero en el log del servidor y en la fila.
+ */
+function ErrorGeneracion({
+  resultado,
+}: {
+  resultado: Extract<GenerateStrategyActionResult, { ok: false }>;
+}) {
+  const mensaje = mensajeParaUsuario(resultado.kind);
+
+  return (
+    <div className="glass-card glass-card--error animate-fade-in rounded-md px-4 py-3 text-sm">
+      <p className="font-medium">{mensaje.titulo}</p>
+      <p className="mt-1 opacity-90">{mensaje.detalle}</p>
+
+      {resultado.retryable && mensaje.accionable && (
+        <p className="mt-2 opacity-80">
+          Puedes volver a intentarlo ahora mismo.
+        </p>
       )}
     </div>
   );

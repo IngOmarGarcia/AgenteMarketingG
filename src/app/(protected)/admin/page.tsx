@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { StrategyStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
+import { claseTono, type TonoEstado } from "@/components/estado-estrategia";
 
 /**
  * Panel maestro. En esta entrega muestra el estado global agregado leyendo
@@ -33,49 +35,82 @@ export default async function AdminPage() {
   const conteo = (s: StrategyStatus) =>
     porEstado.find((p) => p.status === s)?._count._all ?? 0;
 
+  const generando = conteo(StrategyStatus.GENERATING);
+  const numFallidas = conteo(StrategyStatus.FAILED);
+
   return (
     <div className="space-y-8">
       <header>
         <h1 className="text-2xl font-semibold">Panel de administración</h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 text-sm opacity-70">
           Estado global de la generación de estrategias.
         </p>
       </header>
 
       <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        <Metrica etiqueta="Clientes" valor={clientes} />
-        <Metrica etiqueta="Generando" valor={conteo(StrategyStatus.GENERATING)} />
-        <Metrica etiqueta="Listas" valor={conteo(StrategyStatus.READY)} />
-        <Metrica etiqueta="Aprobadas" valor={conteo(StrategyStatus.APPROVED)} />
+        <Metrica etiqueta="Clientes" valor={clientes} tono="info" />
+        <Metrica
+          etiqueta="Generando"
+          valor={generando}
+          tono="info"
+          // El pulso solo cuando hay algo moviéndose de verdad: una tarjeta que
+          // late con un cero es ruido que enseña a ignorar la animación.
+          latiendo={generando > 0}
+        />
+        <Metrica etiqueta="Listas" valor={conteo(StrategyStatus.READY)} tono="ok" />
+        <Metrica
+          etiqueta="Aprobadas"
+          valor={conteo(StrategyStatus.APPROVED)}
+          tono="ok"
+        />
         <Metrica
           etiqueta="Fallidas"
-          valor={conteo(StrategyStatus.FAILED)}
-          destacar={conteo(StrategyStatus.FAILED) > 0}
+          valor={numFallidas}
+          // Sin fallos la tarjeta no debe gritar: el rojo se reserva para cuando
+          // hay algo que mirar, si no deja de significar nada.
+          tono={numFallidas > 0 ? "error" : "info"}
         />
       </section>
 
       <section>
         <h2 className="text-lg font-medium">Últimos fallos</h2>
         {fallidas.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mt-2 text-sm opacity-70">
             Ninguna generación fallida registrada.
           </p>
         ) : (
           <ul className="mt-3 space-y-3">
             {fallidas.map((f) => (
-              <li
-                key={f.id}
-                className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-950/30"
-              >
+              <li key={f.id} className={claseTono("error", "rounded-lg p-4")}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="font-medium">{f.client.name}</span>
-                  <time className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <Link
+                    href={`/estrategias/${f.id}`}
+                    className="font-medium hover:underline"
+                  >
+                    {f.client.name}
+                  </Link>
+                  <time className="text-xs opacity-70">
                     {f.updatedAt.toLocaleString("es-ES")}
                   </time>
                 </div>
-                <p className="mt-1 font-mono text-xs break-words text-red-800 dark:text-red-300">
-                  {f.failureReason ?? "Sin motivo registrado."}
+
+                <p className="mt-1 text-sm opacity-90">
+                  La generación no llegó a completarse.
                 </p>
+
+                {/* El motivo crudo es diagnóstico, no mensaje. Se guarda plegado
+                    para que el panel se lea de un vistazo y siga sirviendo para
+                    depurar cuando hace falta. */}
+                {f.failureReason && (
+                  <details className="mt-2">
+                    <summary className="cursor-pointer text-xs opacity-70 hover:opacity-100">
+                      Detalle técnico
+                    </summary>
+                    <p className="mt-1 font-mono text-xs break-words opacity-80">
+                      {f.failureReason}
+                    </p>
+                  </details>
+                )}
               </li>
             ))}
           </ul>
@@ -88,24 +123,23 @@ export default async function AdminPage() {
 function Metrica({
   etiqueta,
   valor,
-  destacar = false,
+  tono,
+  latiendo = false,
 }: {
   etiqueta: string;
   valor: number;
-  destacar?: boolean;
+  tono: TonoEstado;
+  latiendo?: boolean;
 }) {
   return (
     <div
-      className={`rounded-lg border p-4 ${
-        destacar
-          ? "border-red-300 bg-red-50 dark:border-red-900/50 dark:bg-red-950/30"
-          : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
-      }`}
+      className={claseTono(
+        tono,
+        `rounded-lg p-4 ${latiendo ? "animate-pulse-glow" : ""}`,
+      )}
     >
       <div className="text-2xl font-semibold tabular-nums">{valor}</div>
-      <div className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-        {etiqueta}
-      </div>
+      <div className="mt-0.5 text-xs opacity-70">{etiqueta}</div>
     </div>
   );
 }

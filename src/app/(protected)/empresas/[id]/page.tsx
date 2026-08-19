@@ -7,6 +7,7 @@ import { actualizarEmpresaAction } from "@/modules/clientes/actions";
 import { lineasATexto } from "@/modules/clientes/schemas";
 import { EmpresaForm } from "@/app/(protected)/empresas/empresa-form";
 import { GenerarBoton } from "@/app/(protected)/empresas/[id]/generar-boton";
+import { claseTarjeta, EstadoBadge } from "@/components/estado-estrategia";
 
 /**
  * La generación corre SÍNCRONA dentro de la Server Action y puede pasar de dos
@@ -15,24 +16,6 @@ import { GenerarBoton } from "@/app/(protected)/empresas/[id]/generar-boton";
  * la recoge: es la deuda que cierra pg-boss en el subproyecto 2.
  */
 export const maxDuration = 300;
-
-const ETIQUETA: Readonly<Record<StrategyStatus, string>> = {
-  DRAFT: "Borrador",
-  GENERATING: "Generando",
-  READY: "Lista",
-  APPROVED: "Aprobada",
-  ARCHIVED: "Archivada",
-  FAILED: "Fallida",
-};
-
-const COLOR: Readonly<Record<StrategyStatus, string>> = {
-  DRAFT: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
-  GENERATING: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
-  READY: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-  APPROVED: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-  ARCHIVED: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
-  FAILED: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
-};
 
 export default async function EmpresaPage({
   params,
@@ -87,8 +70,8 @@ export default async function EmpresaPage({
         </Link>
         <h1 className="mt-2 text-2xl font-semibold">{empresa.name}</h1>
         <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          {empresa.sector} · {empresa.monthlyBudgetEur.toLocaleString("es-ES")}{" "}
-          €/mes
+          {empresa.sector} · {empresa.monthlyBudgetEur.toLocaleString("es-US")}{" "}
+          $/mes
           {empresa.website && (
             <>
               {" · "}
@@ -132,29 +115,30 @@ export default async function EmpresaPage({
         ) : (
           <ul className="mt-3 space-y-2">
             {empresa.strategies.map((e) => (
-              <li
-                key={e.id}
-                className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
-              >
+              <li key={e.id} className={claseTarjeta(e.status, "rounded-lg p-4")}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <Link href={`/estrategias/${e.id}`} className="font-medium hover:underline">
                     {e.title}
                   </Link>
                   <div className="flex items-center gap-3">
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${COLOR[e.status]}`}
-                    >
-                      {ETIQUETA[e.status]}
-                    </span>
-                    <time className="text-xs text-zinc-500 dark:text-zinc-400">
+                    <EstadoBadge status={e.status} />
+                    <time className="text-xs opacity-70">
                       {e.updatedAt.toLocaleString("es-ES")}
                     </time>
                   </div>
                 </div>
+
+                {/* El motivo crudo es diagnóstico, no mensaje: va plegado para
+                    que la lista se lea de un vistazo sin perder la pista. */}
                 {e.failureReason && (
-                  <p className="mt-2 font-mono text-xs break-words text-red-700 dark:text-red-400">
-                    {e.failureReason}
-                  </p>
+                  <details className="mt-2">
+                    <summary className="cursor-pointer text-xs opacity-70 hover:opacity-100">
+                      Detalle técnico
+                    </summary>
+                    <p className="mt-1 font-mono text-xs break-words opacity-80">
+                      {e.failureReason}
+                    </p>
+                  </details>
                 )}
               </li>
             ))}

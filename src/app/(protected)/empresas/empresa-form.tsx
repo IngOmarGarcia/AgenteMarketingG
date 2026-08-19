@@ -84,7 +84,7 @@ export function EmpresaForm({
         />
 
         <Campo
-          etiqueta="Presupuesto mensual (€)"
+          etiqueta="Presupuesto mensual ($)"
           nombre="monthlyBudgetEur"
           type="number"
           min={0}

@@ -3,6 +3,7 @@ import { StrategyStatus } from "@prisma/client";
 
 import { requireRole } from "@/lib/auth/dal";
 import { prisma } from "@/lib/prisma";
+import { claseTarjeta, EstadoBadge } from "@/components/estado-estrategia";
 
 /**
  * Vista del cliente final: sus estrategias ya terminadas.
@@ -66,23 +67,20 @@ export default async function ClientePage() {
       ) : (
         <ul className="space-y-3">
           {estrategias.map((e) => (
-            <li
-              key={e.id}
-              className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
-            >
+            <li key={e.id} className={claseTarjeta(e.status, "rounded-lg p-4")}>
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h2 className="font-medium">
                   <Link href={`/estrategias/${e.id}`} className="hover:underline">
                     {e.title}
                   </Link>
                 </h2>
-                <time className="text-xs text-zinc-500 dark:text-zinc-400">
+                <time className="text-xs opacity-70">
                   {e.createdAt.toLocaleDateString("es-ES")}
                 </time>
               </div>
-              <span className="mt-2 inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-                {e.status === StrategyStatus.APPROVED ? "Aprobada" : "Lista"}
-              </span>
+              <div className="mt-2">
+                <EstadoBadge status={e.status} />
+              </div>
             </li>
           ))}
         </ul>
