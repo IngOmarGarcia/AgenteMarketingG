@@ -1,8 +1,10 @@
+import { env } from "@/lib/env";
+
 /**
  * Punto único de configuración del modelo. Cambiar de modelo o de effort
  * no debe requerir tocar el servicio.
  */
-export const AI_CONFIG = {
+export const ANTHROPIC_CONFIG = {
   /**
    * IDs válidos y actuales: "claude-opus-5", "claude-sonnet-5",
    * "claude-sonnet-4-6", "claude-haiku-4-5".
@@ -40,4 +42,39 @@ export const AI_CONFIG = {
   maxRetries: 2,
 } as const;
 
-export type AIConfig = typeof AI_CONFIG;
+export type AnthropicConfig = typeof ANTHROPIC_CONFIG;
+
+/**
+ * Configuración del proveedor local. Existe para desarrollar y demostrar sin
+ * gastar en la API: la calidad del contenido es claramente inferior, pero la
+ * tubería que se prueba es exactamente la misma.
+ */
+/**
+ * Interfaz explícita en vez de `typeof OLLAMA_CONFIG`. Con `as const` los
+ * números quedarían como tipos literales (`8000`, no `number`) y ninguna otra
+ * configuración encajaría — ni siquiera la de un test.
+ */
+export interface OllamaConfig {
+  readonly baseUrl: string;
+  readonly model: string;
+  readonly numPredict: number;
+  readonly timeoutMs: number;
+}
+
+export const OLLAMA_CONFIG: OllamaConfig = {
+  baseUrl: env.OLLAMA_BASE_URL,
+  model: env.OLLAMA_MODEL,
+
+  /**
+   * Equivalente de `maxTokens`. Más bajo que el de Anthropic porque un modelo de
+   * 7B no gasta presupuesto en razonamiento oculto: todo va a la respuesta.
+   */
+  numPredict: 8_000,
+
+  /**
+   * Mucho más largo que el de Anthropic a propósito. En CPU, un 7B llenando el
+   * schema completo puede tardar varios minutos, y cortar antes convertiría una
+   * generación lenta en un fallo que no lo es.
+   */
+  timeoutMs: 600_000,
+};
