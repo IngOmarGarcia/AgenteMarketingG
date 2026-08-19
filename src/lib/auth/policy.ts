@@ -1,0 +1,82 @@
+import type { Role } from "@prisma/client";
+
+/**
+ * Núcleo de decisión de acceso. Función pura: sin base de datos, sin cookies,
+ * sin `redirect()` de Next.
+ *
+ * Está separado del DAL a propósito. La pregunta "¿este perfil puede entrar
+ * aquí?" es la parte del sistema donde un fallo es una escalada de privilegios,
+ * y aislarla de la E/S es lo que permite probarla exhaustivamente —- cada rol
+ * contra cada ruta, incluidos los estados degradados— sin red ni Postgres.
+ */
+
+/** Lo mínimo que hace falta para decidir. No es la fila completa de Profile. */
+export interface ProfileSnapshot {
+  readonly role: Role;
+  readonly clientId: string | null;
+  readonly isActive: boolean;
+}
+
+export type AccessDecision =
+  /** Adelante. */
+  | { readonly type: "allow"; readonly role: Role; readonly clientId: string | null }
+  /** Autenticado pero en la ruta equivocada → a su propio dashboard. */
+  | { readonly type: "redirect"; readonly to: string }
+  /**
+   * La sesión existe pero no es utilizable. Hay que CERRAR SESIÓN, no solo
+   * redirigir: si no, el usuario queda en un bucle con una cookie válida que
+   * no corresponde a un perfil usable.
+   */
+  | { readonly type: "signout"; readonly reason: SignoutReason };
+
+export type SignoutReason =
+  /** Autenticado en Supabase pero sin fila en Profile. */
+  | "no_profile"
+  /** Perfil desactivado por un administrador. */
+  | "inactive";
+
+export const DASHBOARD_BY_ROLE: Readonly<Record<Role, string>> = {
+  ADMIN: "/admin",
+  COLABORADOR: "/colaborador",
+  CLIENTE: "/cliente",
+};
+
+export function dashboardPathFor(role: Role): string {
+  return DASHBOARD_BY_ROLE[role];
+}
+
+/**
+ * Decide si un perfil puede acceder a una ruta que exige `allowedRoles`.
+ *
+ * `profile` es `null` cuando hay sesión en Supabase pero no existe la fila en
+ * Profile. Ese caso NO se trata como "rol por defecto": alguien puede crear un
+ * usuario a mano en el panel de Supabase, y asumir un rol ahí sería conceder
+ * acceso a quien nunca fue dado de alta en la aplicación.
+ */
+export function decideAccess(
+  profile: ProfileSnapshot | null,
+  allowedRoles: readonly Role[],
+): AccessDecision {
+  if (profile === null) {
+    return { type: "signout", reason: "no_profile" };
+  }
+
+  if (!profile.isActive) {
+    return { type: "signout", reason: "inactive" };
+  }
+
+  if (!allowedRoles.includes(profile.role)) {
+    return { type: "redirect", to: dashboardPathFor(profile.role) };
+  }
+
+  return { type: "allow", role: profile.role, clientId: profile.clientId };
+}
+
+/**
+ * Un CLIENTE sin empresa asignada está autenticado y activo, pero no tiene
+ * nada que consultar. No es un error de acceso: la vista debe mostrar un
+ * estado vacío explicativo, no reventar ni echarlo fuera.
+ */
+export function isClienteSinEmpresa(profile: ProfileSnapshot): boolean {
+  return profile.role === "CLIENTE" && profile.clientId === null;
+}
