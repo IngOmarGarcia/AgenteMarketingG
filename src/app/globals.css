@@ -160,11 +160,15 @@ body {
 }
 
 /* --- MOVIMIENTO REDUCIDO ---
-   El fondo en degradado y el pulso de "generando" son animaciones infinitas, y
-   son exactamente las que provocan mareo a quien tiene activada esta
-   preferencia del sistema. Se apagan; los colores se quedan. */
+   Se apagan las animaciones de interfaz; los colores se quedan.
+
+   EXCEPCIÓN DELIBERADA: el degradado del body NO entra aquí. En Windows la
+   preferencia se activa con `MinAnimate=0`, que mucha gente tiene puesto por
+   rendimiento y no por sensibilidad al movimiento, así que aquí apagaría el
+   fondo de la marca a un montón de usuarios que nunca lo pidieron. Es una
+   decisión de producto, no un descuido: para volver a respetarla, añade `body,`
+   al selector de abajo. */
 @media (prefers-reduced-motion: reduce) {
-  body,
   .animate-fade-in,
   .animate-pulse-glow,
   .animate-float {
