@@ -15,7 +15,8 @@
     "db:studio": "prisma studio",
     "smoke": "tsx --env-file=.env scripts/smoke.mts",
     "db:constraints": "prisma db execute --file prisma/constraints.sql",
-    "seed:admin": "tsx --env-file=.env scripts/seed-admin.mts"
+    "seed:admin": "tsx --env-file=.env scripts/seed-admin.mts",
+    "seed:usuarios": "tsx --env-file=.env scripts/seed-usuarios-prueba.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",
