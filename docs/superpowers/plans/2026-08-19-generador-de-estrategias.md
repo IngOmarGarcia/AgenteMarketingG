@@ -69,7 +69,7 @@ Prisma 7.9 · Zod 4 · Tailwind 4 · `node:test` + `tsx`.
 - Consume: `ProfileSnapshot` (ya existe), `StrategyStatus` de `@prisma/client`.
 - Produce: `puedeVerEstrategia(profile: Pick<ProfileSnapshot, "role" | "clientId">, estrategia: { clientId: string; status: StrategyStatus }): boolean`
 
-- [ ] **Paso 1: Escribir los tests que fallan**
+- [x] **Paso 1: Escribir los tests que fallan**
 
 ```ts
 const VISIBLE = { clientId: "cli_1", status: "READY" as const };
@@ -112,12 +112,12 @@ test("un CLIENTE sin empresa no ve ninguna", () => {
 });
 ```
 
-- [ ] **Paso 2: Ejecutar y ver que falla**
+- [x] **Paso 2: Ejecutar y ver que falla**
 
 Run: `npm test`
 Esperado: FAIL — `puedeVerEstrategia is not a function`.
 
-- [ ] **Paso 3: Implementar**
+- [x] **Paso 3: Implementar**
 
 ```ts
 /** Estados que un CLIENTE puede ver. El resto son internos del equipo. */
@@ -139,11 +139,11 @@ export function puedeVerEstrategia(
 Las tres comprobaciones en ese orden: primero quién eres, luego de quién es, y
 solo al final en qué estado está.
 
-- [ ] **Paso 4: Ejecutar y ver que pasa**
+- [x] **Paso 4: Ejecutar y ver que pasa**
 
 Run: `npm test` → PASS.
 
-- [ ] **Paso 5: Commit**
+- [x] **Paso 5: Commit**
 
 ```bash
 git add src/lib/auth/policy.ts src/lib/auth/policy.test.ts
@@ -163,7 +163,7 @@ git commit -m "feat(auth): regla de visibilidad de estrategias por rol"
 - Consume: nada nuevo.
 - Produce: `StrategyErrorKind` gana `"generacion_en_curso"`.
 
-- [ ] **Paso 1: Escribir el test que falla**
+- [x] **Paso 1: Escribir el test que falla**
 
 El doble de Prisma existente necesita `strategy.findFirst`:
 
@@ -190,12 +190,12 @@ test("con una generación en curso no se crea otra ni se llama al modelo", async
 });
 ```
 
-- [ ] **Paso 2: Ejecutar y ver que falla**
+- [x] **Paso 2: Ejecutar y ver que falla**
 
 Run: `npm test`
 Esperado: FAIL — el servicio aún no consulta `findFirst`, así que devuelve `ok`.
 
-- [ ] **Paso 3: Implementar la guardia**
+- [x] **Paso 3: Implementar la guardia**
 
 En `errors.ts`, añadir el kind con su comentario:
 
@@ -233,11 +233,11 @@ if (enCurso) {
 }
 ```
 
-- [ ] **Paso 4: Ejecutar y ver que pasa**
+- [x] **Paso 4: Ejecutar y ver que pasa**
 
 Run: `npm test` → PASS, incluidos los tests previos del servicio.
 
-- [ ] **Paso 5: Commit**
+- [x] **Paso 5: Commit**
 
 ```bash
 git add src/modules/strategy
@@ -261,7 +261,7 @@ git commit -m "feat(strategy): rechazar una segunda generación simultánea"
   - `crearEmpresaAction(prev, formData)`, `actualizarEmpresaAction(prev, formData)`
     con el retorno `AccionResultado` ya usado en el módulo de usuarios
 
-- [ ] **Paso 1: Escribir los tests que fallan**
+- [x] **Paso 1: Escribir los tests que fallan**
 
 ```ts
 test("presupuesto negativo se rechaza", () => {
@@ -296,11 +296,11 @@ test("el brief no admite campos vacíos", () => {
 });
 ```
 
-- [ ] **Paso 2: Ejecutar y ver que falla**
+- [x] **Paso 2: Ejecutar y ver que falla**
 
 Run: `npm test` → FAIL, módulo inexistente.
 
-- [ ] **Paso 3: Implementar el schema**
+- [x] **Paso 3: Implementar el schema**
 
 ```ts
 /**
@@ -343,7 +343,7 @@ export const EmpresaSchema = z.object({
 mismo enum que el resto del sistema y duplicarlo aquí crearía dos listas de
 sectores que se desincronizan.
 
-- [ ] **Paso 4: Implementar las acciones**
+- [x] **Paso 4: Implementar las acciones**
 
 ```ts
 export async function crearEmpresaAction(
@@ -369,11 +369,11 @@ export async function crearEmpresaAction(
 
 `actualizarEmpresaAction` es igual con `update` y un `id` extra validado.
 
-- [ ] **Paso 5: Ejecutar y ver que pasa**
+- [x] **Paso 5: Ejecutar y ver que pasa**
 
 Run: `npm test` → PASS.
 
-- [ ] **Paso 6: Commit**
+- [x] **Paso 6: Commit**
 
 ```bash
 git add src/modules/clientes
@@ -394,7 +394,7 @@ git commit -m "feat(clientes): alta y edición de empresas con su brief"
 - Consume: `requireRole`, `crearEmpresaAction`, `generateStrategyAction`.
 - Produce: las rutas. Nada que consuman tareas posteriores.
 
-- [ ] **Paso 1: Añadir los prefijos al proxy**
+- [x] **Paso 1: Añadir los prefijos al proxy**
 
 ```ts
 const RUTAS_PROTEGIDAS = [
@@ -408,7 +408,7 @@ const RUTAS_PROTEGIDAS = [
 
 Sin esto un usuario sin sesión llega hasta el layout en vez de cortarse en Edge.
 
-- [ ] **Paso 2: Layout compartido**
+- [x] **Paso 2: Layout compartido**
 
 ```tsx
 export default async function EmpresasLayout({ children }: { children: React.ReactNode }) {
@@ -420,12 +420,12 @@ export default async function EmpresasLayout({ children }: { children: React.Rea
 Primer segmento del proyecto con dos roles permitidos. Gestionar la cartera es
 trabajo operativo y el COLABORADOR existe para eso.
 
-- [ ] **Paso 3: Listado y alta**
+- [x] **Paso 3: Listado y alta**
 
 `page.tsx` lista empresas con su número de estrategias y monta `<EmpresaForm>`,
 un componente de cliente con `useActionState(crearEmpresaAction, null)`.
 
-- [ ] **Paso 4: Ficha de empresa con el botón de generar**
+- [x] **Paso 4: Ficha de empresa con el botón de generar**
 
 `[id]/page.tsx` muestra el brief, el historial de estrategias con enlace a cada
 una, y el botón. Declara el límite de duración del segmento:
@@ -437,7 +437,7 @@ una, y el botón. Declara el límite de duración del segmento:
 export const maxDuration = 300;
 ```
 
-- [ ] **Paso 5: El botón**
+- [x] **Paso 5: El botón**
 
 ```tsx
 "use client";
@@ -474,16 +474,16 @@ El copy de espera dice que puede cerrar la pestaña sin perder la generación, y
 es cierto: la fila se crea en GENERATING antes de llamar al modelo y la acción
 sigue en el servidor.
 
-- [ ] **Paso 6: Enlace en la navegación**
+- [x] **Paso 6: Enlace en la navegación**
 
 `ENLACES` gana `{ href: "/empresas", label: "Empresas" }` para ADMIN y
 COLABORADOR.
 
-- [ ] **Paso 7: Verificar**
+- [x] **Paso 7: Verificar**
 
 Run: `npx tsc --noEmit && npx eslint src scripts` → limpio.
 
-- [ ] **Paso 8: Commit**
+- [x] **Paso 8: Commit**
 
 ```bash
 git add src/proxy.ts "src/app/(protected)/empresas" src/components/nav-principal.tsx
@@ -502,7 +502,7 @@ git commit -m "feat(empresas): cartera, ficha y botón de generación"
 - Consume: `verifySession`, `puedeVerEstrategia`, `StrategyOutputSchema`.
 - Produce: `<EstrategiaVista strategy={...} presupuestoMensualEur={...} />`
 
-- [ ] **Paso 1: La página valida acceso y contenido**
+- [x] **Paso 1: La página valida acceso y contenido**
 
 ```tsx
 const session = await verifySession();
@@ -520,7 +520,7 @@ if (!puedeVerEstrategia(session, estrategia)) notFound();
 const parsed = StrategyOutputSchema.safeParse(estrategia.content);
 ```
 
-- [ ] **Paso 2: Fallback cuando el contenido no valida**
+- [x] **Paso 2: Fallback cuando el contenido no valida**
 
 Las filas de `smoke.mts` tienen contenido parcial. En vez de reventar:
 
@@ -536,7 +536,7 @@ if (!parsed.success) {
 }
 ```
 
-- [ ] **Paso 3: El render**
+- [x] **Paso 3: El render**
 
 Secciones: resumen ejecutivo, posicionamiento, objetivos, reparto de canales,
 pilares de contenido, quick wins, riesgos y aprendizajes aplicados.
@@ -549,11 +549,11 @@ const euros = Math.round((plan.budgetShare / 100) * presupuestoMensualEur);
 
 Un porcentaje es un gráfico; un importe es una decisión.
 
-- [ ] **Paso 4: Verificar**
+- [x] **Paso 4: Verificar**
 
 Run: `npm test && npx tsc --noEmit && npx eslint src scripts` → limpio.
 
-- [ ] **Paso 5: Commit**
+- [x] **Paso 5: Commit**
 
 ```bash
 git add src/components/estrategia-vista.tsx "src/app/(protected)/estrategias"
@@ -564,7 +564,7 @@ git commit -m "feat(estrategias): vista del resultado con validación al leer"
 
 ## Task 6: Verificación de extremo a extremo
 
-- [ ] **Paso 1: Suite completa**
+- [x] **Paso 1: Suite completa**
 
 ```bash
 npm test && npx tsc --noEmit && npx eslint src scripts
