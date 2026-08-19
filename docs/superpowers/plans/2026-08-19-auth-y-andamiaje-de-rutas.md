@@ -7,8 +7,9 @@
 **Spec de origen:** [`docs/superpowers/specs/2026-08-18-auth-y-andamiaje-de-rutas-design.md`](../specs/2026-08-18-auth-y-andamiaje-de-rutas-design.md)
 **Subproyecto:** 1 de 3 (auth · cola asíncrona · contenido de dashboards)
 
-**Estado:** Tareas 1–8 **implementadas y verificadas** el 2026-08-19. Tarea 9
-**pendiente** — es un agujero de seguridad conocido, ver su sección.
+**Estado:** Tareas 1–9 **implementadas y verificadas** el 2026-08-19. Queda
+pendiente únicamente el paso 2 de la Task 8: el recorrido manual de los
+criterios de aceptación en el navegador, que no se puede automatizar.
 
 **Goal:** Dar a la plataforma una capa de autenticación con tres roles
 (ADMIN / COLABORADOR / CLIENTE), el árbol de rutas protegidas correspondiente y
@@ -1021,14 +1022,18 @@ correo real, no se puede automatizar en esta entrega.
 
 ---
 
-## Task 9: Cerrar `generateStrategyAction` — PENDIENTE
+## Task 9: Cerrar `generateStrategyAction`
 
 **Files:**
-- Modify: `src/modules/strategy/actions/generate-strategy.action.ts:59-63`
+- Modify: `src/lib/auth/policy.ts`
+- Test: `src/lib/auth/policy.test.ts`
+- Modify: `src/modules/strategy/actions/generate-strategy.action.ts`
 
-**Estado:** no implementada. **Es un agujero de seguridad activo.**
+**Interfaces:**
+- Consume: `requireRole` (Task 4), `ProfileSnapshot` (Task 3).
+- Produce: `puedeGenerarPara(profile: Pick<ProfileSnapshot, "role" | "clientId">, clientId: string): boolean`
 
-La acción se escribió antes de que existiera la capa de autenticación y lleva
+La acción se escribió antes de que existiera la capa de autenticación y llevaba
 este hueco marcado en el código:
 
 ```ts
@@ -1040,11 +1045,11 @@ este hueco marcado en el código:
 ```
 
 Una Server Action es un endpoint POST alcanzable por cualquiera que sepa mandar
-la petición. Tal como está, un anónimo puede quemar tokens de Anthropic y recibir
-de vuelta el brief completo de cualquier cliente con solo conocer un `clientId`.
-Ya existe todo lo necesario para cerrarlo.
+la petición. Tal como estaba, un anónimo podía quemar tokens de Anthropic y
+recibir de vuelta el brief completo de cualquier cliente con solo conocer un
+`clientId`.
 
-- [ ] **Paso 1: Escribir el test de la regla de propiedad**
+- [x] **Paso 1: Escribir el test de la regla de propiedad**
 
 La comprobación "¿este perfil puede generar para este cliente?" se extrae a una
 función pura en `policy.ts` para poder probarla sin red:
@@ -1057,26 +1062,34 @@ test("un CLIENTE solo puede generar para SU empresa", () => {
   assert.equal(puedeGenerarPara(p, "cli_2"), false);
 });
 
+test("un CLIENTE sin empresa no puede generar para ninguna", () => {
+  const p = perfil({ role: "CLIENTE", clientId: null });
+  assert.equal(puedeGenerarPara(p, "cli_1"), false);
+});
+
 test("ADMIN y COLABORADOR pueden generar para cualquier empresa", () => {
   assert.equal(puedeGenerarPara(perfil({ role: "ADMIN" }), "cli_9"), true);
   assert.equal(puedeGenerarPara(perfil({ role: "COLABORADOR" }), "cli_9"), true);
 });
 ```
 
-- [ ] **Paso 2: Ejecutar y ver que falla**
+- [x] **Paso 2: Ejecutar y ver que falla**
 
 Run: `npm test`
-Esperado: FAIL — `puedeGenerarPara is not exported`.
+Esperado: FAIL — `puedeGenerarPara is not a function`.
 
-- [ ] **Paso 3: Implementar en `policy.ts`**
+- [x] **Paso 3: Implementar en `policy.ts`**
 
 ```ts
 /**
- * Quién puede pedir una generación para una empresa dada. ADMIN y COLABORADOR
- * trabajan sobre toda la cartera; un CLIENTE solo sobre la suya.
+ * Quién puede pedir una generación para una empresa dada.
+ *
+ * ADMIN y COLABORADOR trabajan sobre toda la cartera de la agencia. Un CLIENTE
+ * solo sobre la suya: sin esta comprobación bastaría con cambiar el `clientId`
+ * de la petición para leer el brief y la estrategia de otra empresa.
  */
 export function puedeGenerarPara(
-  profile: ProfileSnapshot,
+  profile: Pick<ProfileSnapshot, "role" | "clientId">,
   clientId: string,
 ): boolean {
   if (profile.role === "CLIENTE") return profile.clientId === clientId;
@@ -1084,20 +1097,29 @@ export function puedeGenerarPara(
 }
 ```
 
-- [ ] **Paso 4: Cablearlo en la acción**
+El parámetro es `Pick<ProfileSnapshot, "role" | "clientId">` y no
+`ProfileSnapshot` entero para que `Session` encaje directamente: obligar al
+llamante a inventarse un `isActive: true` sería pedirle que falsee un dato que
+el DAL ya comprobó.
 
-Sustituir el bloque de comentarios por:
+- [x] **Paso 4: Cablearlo en la acción**
+
+Sustituir el bloque de comentarios por la llamada real, y añadir la
+comprobación de propiedad **después** de validar la entrada — la comprobación
+necesita un `clientId` ya normalizado:
 
 ```ts
+// Sin sesión utilizable, `requireRole` redirige a /login y esta función no
+// llega a ejecutarse. Los tres roles pueden pedir una generación; cuál puede
+// pedirla para QUÉ empresa lo decide `puedeGenerarPara` más abajo.
 const session = await requireRole("ADMIN", "COLABORADOR", "CLIENTE");
 
 const parsed = GenerateStrategyActionSchema.safeParse(rawInput);
-if (!parsed.success) { /* ...igual que ahora... */ }
+if (!parsed.success) { /* ...sin cambios... */ }
 
-if (!puedeGenerarPara(
-  { role: session.role, clientId: session.clientId, isActive: true },
-  parsed.data.clientId,
-)) {
+if (!puedeGenerarPara(session, parsed.data.clientId)) {
+  // Mismo mensaje tanto si la empresa no existe como si es de otro: decir
+  // cuál de las dos cosas es permite enumerar clientes a base de probar ids.
   return {
     ok: false,
     kind: "forbidden",
@@ -1107,15 +1129,23 @@ if (!puedeGenerarPara(
 }
 ```
 
-El orden importa: validar la entrada **antes** de comprobar la propiedad, porque
-la comprobación necesita un `clientId` ya normalizado.
+- [x] **Paso 5: Corregir la revalidación**
 
-- [ ] **Paso 5: Verificar**
+`revalidatePath('/clients/${clientId}')` apuntaba a una ruta que no existe en el
+árbol construido en la Task 5, así que no refrescaba nada:
+
+```ts
+// Las dos vistas que listan estrategias.
+revalidatePath("/cliente");
+revalidatePath("/admin");
+```
+
+- [x] **Paso 6: Verificar**
 
 Run: `npm test && npx tsc --noEmit && npx eslint src scripts`
-Esperado: limpio, con los dos tests nuevos en verde.
+Esperado: 27 tests OK, cero errores de tipos, lint limpio.
 
-- [ ] **Paso 6: Commit**
+- [x] **Paso 7: Commit**
 
 ```bash
 git add src/lib/auth/policy.ts src/lib/auth/policy.test.ts \
@@ -1145,6 +1175,7 @@ Confirmado como no incluido en esta entrega, según la spec:
 - **Límite de correo de Supabase.** El SMTP integrado permite unos pocos envíos
   por hora. La contraseña es la vía principal justamente por eso. Si el magic
   link se vuelve el acceso habitual, hace falta SMTP propio (Resend, SendGrid).
-- **`migration.sql` en la raíz del repo** es un volcado anterior al modelo
-  `Profile`, generado antes de esta entrega. No refleja el schema actual y no se
-  ha commiteado; conviene borrarlo para que nadie lo aplique por error.
+- **El flujo de schema es `db:push`, no `migrate`.** El `migration.sql` que había
+  en la raíz del repo era un volcado anterior al modelo `Profile`; se borró en
+  esta entrega para que nadie lo aplicara por error creyendo que reflejaba el
+  schema actual.
