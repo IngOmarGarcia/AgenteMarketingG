@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { StrategyStatus } from "@prisma/client";
 
 import { requireRole } from "@/lib/auth/dal";
@@ -70,7 +71,11 @@ export default async function ClientePage() {
               className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
             >
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="font-medium">{e.title}</h2>
+                <h2 className="font-medium">
+                  <Link href={`/estrategias/${e.id}`} className="hover:underline">
+                    {e.title}
+                  </Link>
+                </h2>
                 <time className="text-xs text-zinc-500 dark:text-zinc-400">
                   {e.createdAt.toLocaleDateString("es-ES")}
                 </time>

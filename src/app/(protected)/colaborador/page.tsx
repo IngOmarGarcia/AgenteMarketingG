@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { StrategyStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
@@ -72,7 +73,11 @@ export default async function ColaboradorPage() {
             >
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <div>
-                  <h2 className="font-medium">{e.title}</h2>
+                  <h2 className="font-medium">
+                    <Link href={`/estrategias/${e.id}`} className="hover:underline">
+                      {e.title}
+                    </Link>
+                  </h2>
                   <p className="text-sm text-zinc-500 dark:text-zinc-400">
                     {e.client.name} · {e.client.sector}
                   </p>
