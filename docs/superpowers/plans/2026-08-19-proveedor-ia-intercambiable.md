@@ -63,7 +63,7 @@ y se valida en un solo sitio.
 - Produce: `env.AI_PROVIDER` (`"anthropic" | "ollama"`), `env.OLLAMA_BASE_URL`,
   `env.OLLAMA_MODEL`, `env.ANTHROPIC_API_KEY` (`string | undefined`).
 
-- [ ] **Paso 1: Añadir las variables y la regla condicional**
+- [x] **Paso 1: Añadir las variables y la regla condicional**
 
 ```ts
 const envSchema = z
@@ -96,7 +96,7 @@ const envSchema = z
   });
 ```
 
-- [ ] **Paso 2: Documentarlas en `.env.example`**
+- [x] **Paso 2: Documentarlas en `.env.example`**
 
 ```bash
 # Proveedor de IA: "anthropic" (producción) u "ollama" (local, sin coste).
@@ -107,14 +107,14 @@ OLLAMA_BASE_URL="http://localhost:11434"
 OLLAMA_MODEL="qwen2.5:latest"
 ```
 
-- [ ] **Paso 3: Verificar que la suite sigue arrancando**
+- [x] **Paso 3: Verificar que la suite sigue arrancando**
 
 Run: `npm test`
 Esperado: los 50 tests siguen pasando. `.env.test` ya trae `ANTHROPIC_API_KEY` y
 no define `AI_PROVIDER`, así que cae en el valor por defecto `anthropic` y la
 regla condicional se satisface.
 
-- [ ] **Paso 4: Commit**
+- [x] **Paso 4: Commit**
 
 ```bash
 git add src/lib/env.ts .env.example
@@ -140,7 +140,7 @@ git commit -m "feat(env): AI_PROVIDER y clave de Anthropic condicional"
   - `ANTHROPIC_CONFIG`, `OLLAMA_CONFIG`
   - `getAnthropicClient()`
 
-- [ ] **Paso 1: Escribir el puerto**
+- [x] **Paso 1: Escribir el puerto**
 
 ```ts
 // src/modules/ai-core/providers/tipos.ts
@@ -180,7 +180,7 @@ export interface GenerationProvider {
 }
 ```
 
-- [ ] **Paso 2: Partir la configuración por proveedor**
+- [x] **Paso 2: Partir la configuración por proveedor**
 
 `AI_CONFIG` pasa a `ANTHROPIC_CONFIG` (mismos valores y comentarios) y se añade:
 
@@ -204,7 +204,7 @@ export const OLLAMA_CONFIG = {
 } as const;
 ```
 
-- [ ] **Paso 3: Hacer perezoso el cliente de Anthropic**
+- [x] **Paso 3: Hacer perezoso el cliente de Anthropic**
 
 Hoy `client.ts` instancia el SDK al importar el módulo, lo que reventaría al
 arrancar en modo Ollama ahora que la clave es condicional:
@@ -230,7 +230,7 @@ export function getAnthropicClient(): Anthropic {
 }
 ```
 
-- [ ] **Paso 4: Verificar tipos**
+- [x] **Paso 4: Verificar tipos**
 
 Run: `npx tsc --noEmit`
 Esperado: fallará en `ai.service.ts`, que todavía usa `anthropic` y `AI_CONFIG`.
@@ -249,7 +249,7 @@ Se arregla en la Task 4. Comprobar que no falla en ningún otro sitio.
 - Produce: `class OllamaProvider implements GenerationProvider`, con constructor
   `(config = OLLAMA_CONFIG, fetchImpl = fetch)` para poder inyectar dobles.
 
-- [ ] **Paso 1: Escribir los tests que fallan**
+- [x] **Paso 1: Escribir los tests que fallan**
 
 ```ts
 const SCHEMA = z.object({ titulo: z.string(), puntos: z.array(z.string()) });
@@ -385,12 +385,12 @@ test("5xx del servidor: upstream_unavailable", async () => {
 });
 ```
 
-- [ ] **Paso 2: Ejecutar y ver que falla**
+- [x] **Paso 2: Ejecutar y ver que falla**
 
 Run: `npm test`
 Esperado: FAIL — `Cannot find module '.../ollama.provider'`.
 
-- [ ] **Paso 3: Implementar el adaptador**
+- [x] **Paso 3: Implementar el adaptador**
 
 Puntos que no son evidentes y deben quedar comentados en el código:
 
@@ -407,12 +407,12 @@ Puntos que no son evidentes y deben quedar comentados en el código:
   transporte. `AIService` volverá a validar contra el schema real, y esa segunda
   pasada es la que manda.
 
-- [ ] **Paso 4: Ejecutar y ver que pasa**
+- [x] **Paso 4: Ejecutar y ver que pasa**
 
 Run: `npm test`
 Esperado: PASS, 8 tests nuevos.
 
-- [ ] **Paso 5: Commit**
+- [x] **Paso 5: Commit**
 
 ```bash
 git add src/modules/ai-core/providers
@@ -435,14 +435,14 @@ git commit -m "feat(ai-core): adaptador de Ollama sobre fetch"
   `AIService` mantiene la firma pública `generateStrategy(rawInput: unknown)` y
   el mismo `GenerateStrategyResult`, para que `StrategyService` no cambie.
 
-- [ ] **Paso 1: Mover el código de Anthropic al adaptador**
+- [x] **Paso 1: Mover el código de Anthropic al adaptador**
 
 Se traslada tal cual: la llamada a `client.messages.parse` con `thinking`,
 `output_config` y el `cache_control` del system, las comprobaciones de
 `stop_reason` y `mapError` entera. Cambia solo el retorno: `output` en vez de
 `strategy`, y `parsed_output` se devuelve sin tipar.
 
-- [ ] **Paso 2: Escribir el test de la fábrica**
+- [x] **Paso 2: Escribir el test de la fábrica**
 
 ```ts
 test("la fábrica devuelve el proveedor que nombra AI_PROVIDER", () => {
@@ -456,7 +456,7 @@ test("un nombre desconocido no se acepta en silencio", () => {
 
 No se prueba `crearProveedor("anthropic")` porque construir el SDK exige clave.
 
-- [ ] **Paso 3: Implementar la fábrica**
+- [x] **Paso 3: Implementar la fábrica**
 
 ```ts
 export function crearProveedor(
@@ -475,7 +475,7 @@ export function crearProveedor(
 }
 ```
 
-- [ ] **Paso 4: Adelgazar `AIService`**
+- [x] **Paso 4: Adelgazar `AIService`**
 
 ```ts
 export class AIService {
@@ -515,13 +515,13 @@ export class AIService {
 }
 ```
 
-- [ ] **Paso 5: Verificar que nada aguas abajo cambió**
+- [x] **Paso 5: Verificar que nada aguas abajo cambió**
 
 Run: `npm test && npx tsc --noEmit && npx eslint src scripts`
 Esperado: limpio. Los tests de `strategy.service.test.ts` siguen pasando sin
 tocarlos: inyectan un doble de `AIService`, cuya firma no ha cambiado.
 
-- [ ] **Paso 6: Commit**
+- [x] **Paso 6: Commit**
 
 ```bash
 git add src/modules/ai-core
@@ -532,19 +532,19 @@ git commit -m "refactor(ai-core): AIService delega el transporte en un proveedor
 
 ## Task 5: Verificación contra el Ollama real
 
-- [ ] **Paso 1: Suite completa**
+- [x] **Paso 1: Suite completa**
 
 ```bash
 npm test && npx tsc --noEmit && npx eslint src scripts && npx next build
 ```
 
-- [ ] **Paso 2: Generación de punta a punta**
+- [x] **Paso 2: Generación de punta a punta**
 
 Con `AI_PROVIDER=ollama` en `.env` y `ollama serve` corriendo, generar una
 estrategia desde la ficha de una empresa y comprobar que la fila acaba en `READY`
 con `content` que valida.
 
-- [ ] **Paso 3: Comprobar el fallo con Ollama apagado**
+- [x] **Paso 3: Comprobar el fallo con Ollama apagado**
 
 Parar Ollama y volver a generar. Esperado: la fila acaba en `FAILED` y la
 interfaz muestra *"El servicio de IA no responde"*, no el error crudo.
