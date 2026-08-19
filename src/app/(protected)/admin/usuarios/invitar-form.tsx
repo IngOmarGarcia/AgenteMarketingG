@@ -7,8 +7,13 @@ import {
   type AccionResultado,
 } from "@/modules/usuarios/actions";
 
+/**
+ * Campos translúcidos para que se apoyen sobre el vidrio de la tarjeta en vez
+ * de abrir agujeros blancos en él. El texto se fuerza oscuro sobre el fondo
+ * claro: heredarlo dejaría letra clara sobre fondo claro en modo claro.
+ */
 const INPUT =
-  "mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-950";
+  "mt-1 w-full rounded-md border border-white/25 bg-white/70 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-[var(--primary)] dark:bg-white/10 dark:text-zinc-50";
 
 export function InvitarUsuarioForm({
   empresas,
@@ -85,23 +90,30 @@ export function InvitarUsuarioForm({
       {estado && (
         <p
           role="status"
-          className={`text-sm ${
-            estado.ok
-              ? "text-emerald-700 dark:text-emerald-400"
-              : "text-red-600 dark:text-red-400"
+          className={`glass-card animate-fade-in rounded-md px-3 py-2 text-sm ${
+            estado.ok ? "glass-card--ok" : "glass-card--error"
           }`}
         >
           {estado.mensaje}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pendiente}
-        className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-      >
-        {pendiente ? "Enviando…" : "Enviar invitación"}
-      </button>
+      {/* Acción principal del formulario: centrada al pie y con el azul de
+          marca, para que se distinga de los botones secundarios de la lista de
+          abajo, que son de contorno. `hover-scale` ya existía en globals.css.
+          Se retira mientras envía: un botón que crece al pasar por encima pero
+          no responde al clic promete algo que no va a cumplir. */}
+      <div className="flex justify-center pt-3">
+        <button
+          type="submit"
+          disabled={pendiente}
+          className={`rounded-lg bg-[var(--primary)] px-8 py-3 text-sm font-semibold text-[var(--primary-foreground)] shadow-[0_8px_24px_rgba(37,99,235,0.45)] disabled:cursor-not-allowed disabled:opacity-60 ${
+            pendiente ? "" : "hover-scale"
+          }`}
+        >
+          {pendiente ? "Enviando…" : "Enviar invitación"}
+        </button>
+      </div>
     </form>
   );
 }

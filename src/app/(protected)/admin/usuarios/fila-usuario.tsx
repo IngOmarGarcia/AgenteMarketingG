@@ -8,6 +8,7 @@ import {
   cambiarRolAction,
   type AccionResultado,
 } from "@/modules/usuarios/actions";
+import { claseTono } from "@/components/estado-estrategia";
 
 const ETIQUETA_ROL: Readonly<Record<Role, string>> = {
   ADMIN: "Administrador",
@@ -46,23 +47,27 @@ export function FilaUsuario({
   const mensaje = estadoRol ?? estadoActivo;
 
   return (
-    <li className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+    // Mismo lenguaje de color que las estrategias: azul lo normal, rojo lo que
+    // no funciona. Un usuario desactivado no puede entrar, así que es rojo. El
+    // verde no se usa aquí: no hay ningún estado de "usuario terminado" al que
+    // corresponda, y darle uno por rellenar la paleta vaciaría el código.
+    <li className={claseTono(perfil.isActive ? "info" : "error", "rounded-lg p-4")}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium">{perfil.fullName ?? perfil.email}</span>
             {!perfil.isActive && (
-              <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-xs text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200">
+              <span className="rounded-full bg-red-500/25 px-2 py-0.5 text-xs font-medium ring-1 ring-red-400/50">
                 Desactivado
               </span>
             )}
             {esUsuarioActual && (
-              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+              <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-xs font-medium ring-1 ring-blue-400/40">
                 Tú
               </span>
             )}
           </div>
-          <p className="truncate text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="truncate text-sm opacity-70">
             {perfil.email}
             {perfil.empresaNombre && ` · ${perfil.empresaNombre}`}
           </p>
@@ -81,7 +86,7 @@ export function FilaUsuario({
               <select
                 name="role"
                 defaultValue={perfil.role}
-                className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+                className="rounded-md border border-white/25 bg-white/70 px-2 py-1 text-sm text-zinc-900 dark:bg-white/10 dark:text-zinc-50"
               >
                 <option value="ADMIN">Administrador</option>
                 <option value="COLABORADOR">Colaborador</option>
@@ -92,7 +97,7 @@ export function FilaUsuario({
                 defaultValue={
                   empresas.find((e) => e.name === perfil.empresaNombre)?.id ?? ""
                 }
-                className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+                className="rounded-md border border-white/25 bg-white/70 px-2 py-1 text-sm text-zinc-900 dark:bg-white/10 dark:text-zinc-50"
               >
                 <option value="">Sin empresa</option>
                 {empresas.map((e) => (
@@ -104,7 +109,7 @@ export function FilaUsuario({
               <button
                 type="submit"
                 disabled={pendienteRol}
-                className="rounded-md border border-zinc-300 px-2.5 py-1 text-sm hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                className="rounded-md border border-white/30 px-2.5 py-1 text-sm hover:bg-white/15 disabled:opacity-50"
               >
                 Guardar
               </button>
@@ -115,7 +120,7 @@ export function FilaUsuario({
               <button
                 type="submit"
                 disabled={pendienteActivo}
-                className="rounded-md border border-zinc-300 px-2.5 py-1 text-sm hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                className="rounded-md border border-white/30 px-2.5 py-1 text-sm hover:bg-white/15 disabled:opacity-50"
               >
                 {perfil.isActive ? "Desactivar" : "Reactivar"}
               </button>
@@ -127,10 +132,8 @@ export function FilaUsuario({
       {mensaje && (
         <p
           role="status"
-          className={`mt-2 text-sm ${
-            mensaje.ok
-              ? "text-emerald-700 dark:text-emerald-400"
-              : "text-red-600 dark:text-red-400"
+          className={`glass-card animate-fade-in mt-3 rounded-md px-3 py-2 text-sm ${
+            mensaje.ok ? "glass-card--ok" : "glass-card--error"
           }`}
         >
           {mensaje.mensaje}

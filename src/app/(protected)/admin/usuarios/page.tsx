@@ -2,6 +2,7 @@ import { requireRole } from "@/lib/auth/dal";
 import { prisma } from "@/lib/prisma";
 import { InvitarUsuarioForm } from "@/app/(protected)/admin/usuarios/invitar-form";
 import { FilaUsuario } from "@/app/(protected)/admin/usuarios/fila-usuario";
+import { claseTono } from "@/components/estado-estrategia";
 
 export default async function UsuariosPage() {
   const session = await requireRole("ADMIN");
@@ -29,12 +30,12 @@ export default async function UsuariosPage() {
     <div className="space-y-8">
       <header>
         <h1 className="text-2xl font-semibold">Usuarios</h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 text-sm opacity-70">
           Solo un administrador puede dar de alta usuarios y asignarles rol.
         </p>
       </header>
 
-      <section className="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+      <section className={claseTono("info", "rounded-lg p-6")}>
         <h2 className="text-lg font-medium">Invitar usuario</h2>
         <InvitarUsuarioForm empresas={empresas} />
       </section>
@@ -45,7 +46,7 @@ export default async function UsuariosPage() {
         </h2>
 
         {perfiles.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mt-2 text-sm opacity-70">
             Todavía no hay ningún usuario. Usa el formulario de arriba.
           </p>
         ) : (
