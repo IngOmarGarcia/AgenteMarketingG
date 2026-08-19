@@ -37,6 +37,7 @@ export class BrainServiceError extends Error {
 export type StrategyErrorKind =
   | "client_not_found" // El clientId no corresponde a ninguna fila.
   | "invalid_client_profile" // La fila existe pero el brief no valida.
+  | "generacion_en_curso" // Ya hay tokens en vuelo para ese cliente.
   | "database" // Fallo de Postgres al crear o actualizar la estrategia.
   | "unknown";
 

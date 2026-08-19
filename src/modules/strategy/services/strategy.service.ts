@@ -66,6 +66,8 @@ export type StrategyGenerationError =
  *  - Un fallo del modelo marca la fila FAILED con motivo, nunca la borra.
  *  - Un fallo de la memoria histórica NO aborta: degrada la calidad, no la
  *    corrección.
+ *  - Un cliente con una generación viva rechaza la siguiente. Generar dos veces
+ *    en paralelo para el mismo cliente es pagar dos veces por lo mismo.
  *
  * Dependencias por constructor para poder testear sin red ni Postgres.
  */
@@ -142,7 +144,40 @@ export class StrategyService {
 
     const clientContext: ClientContext = parsedContext.data;
 
-    // 3) Reservar la fila en GENERATING.
+    // 3) Guardia contra generaciones simultáneas. Una fila viva en GENERATING
+    //    significa que ya hay tokens en vuelo para este cliente. El botón
+    //    deshabilitado de la UI no protege de una segunda pestaña ni de un
+    //    reenvío del POST.
+    //
+    //    Vive aquí y no en la Server Action porque este servicio es quien posee
+    //    la secuencia: el worker de pg-boss heredará la guardia sin repetirla.
+    //
+    //    No es exclusión mutua a prueba de carreras —dos peticiones en el mismo
+    //    milisegundo pasarían ambas—, pero cubre el caso real, que es humano y
+    //    separado por segundos. Cerrarlo del todo exige un índice parcial único,
+    //    y eso pertenece al subproyecto 2 junto con la cola.
+    let enCurso: { id: string } | null;
+    try {
+      enCurso = await this.db.strategy.findFirst({
+        where: { clientId: client.id, status: StrategyStatus.GENERATING },
+        select: { id: true },
+      });
+    } catch (error) {
+      return err(StrategyService.mapDbError(error));
+    }
+
+    if (enCurso) {
+      return err(
+        new StrategyServiceError({
+          kind: "generacion_en_curso",
+          message: `Ya hay una generación en curso para "${client.name}". Espera a que termine antes de lanzar otra.`,
+          retryable: false,
+          strategyId: enCurso.id,
+        }),
+      );
+    }
+
+    // 4) Reservar la fila en GENERATING.
     let strategyId: string;
     try {
       const row = await this.db.strategy.create({
@@ -162,7 +197,7 @@ export class StrategyService {
       return err(StrategyService.mapDbError(error));
     }
 
-    // 4) Memoria histórica. Se excluye el propio cliente para que el modelo
+    // 5) Memoria histórica. Se excluye el propio cliente para que el modelo
     //    no se copie a sí mismo y realimente sus propios sesgos.
     const memoryResult = await this.brain.getHistoricalMemory({
       sector: client.sector,
@@ -180,7 +215,7 @@ export class StrategyService {
 
     const historicalMemory = memoryResult.ok ? memoryResult.data : [];
 
-    // 5) Generación.
+    // 6) Generación.
     const generation = await this.ai.generateStrategy({
       clientContext,
       competitiveAnalysis: params.competitiveAnalysis ?? {
@@ -197,7 +232,7 @@ export class StrategyService {
 
     const { strategy, usage } = generation.data;
 
-    // 6) Persistir el resultado. `content` guarda el objeto completo: es la
+    // 7) Persistir el resultado. `content` guarda el objeto completo: es la
     //    fuente de la que BrainService extraerá el resumen en el futuro.
     try {
       await this.db.strategy.update({

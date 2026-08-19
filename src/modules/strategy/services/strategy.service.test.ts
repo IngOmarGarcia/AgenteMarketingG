@@ -43,7 +43,9 @@ const SALIDA_MODELO: StrategyOutput = {
 };
 
 /** Registra las escrituras para poder afirmar sobre las transiciones de estado. */
-function fakeDb(overrides: { client?: unknown } = {}) {
+function fakeDb(
+  overrides: { client?: unknown; generacionEnCurso?: boolean } = {},
+) {
   const updates: Array<Record<string, unknown>> = [];
   const creates: Array<Record<string, unknown>> = [];
 
@@ -53,6 +55,9 @@ function fakeDb(overrides: { client?: unknown } = {}) {
         "client" in overrides ? overrides.client : CLIENTE_COMPLETO,
     },
     strategy: {
+      /** Lo consulta la guardia de generación concurrente. */
+      findFirst: async () =>
+        overrides.generacionEnCurso ? { id: "str_en_curso" } : null,
       create: async ({ data }: { data: Record<string, unknown> }) => {
         creates.push(data);
         return { id: "str_1" };
@@ -65,6 +70,28 @@ function fakeDb(overrides: { client?: unknown } = {}) {
   } as unknown as PrismaClient;
 
   return { db, updates, creates };
+}
+
+/** Cuenta llamadas al modelo para poder afirmar que NO se gastaron tokens. */
+function aiContador() {
+  let llamadas = 0;
+  const ai = {
+    generateStrategy: async () => {
+      llamadas += 1;
+      return ok({
+        strategy: SALIDA_MODELO,
+        model: "claude-sonnet-5",
+        requestId: "req_1",
+        usage: {
+          inputTokens: 0,
+          outputTokens: 0,
+          cacheReadTokens: 0,
+          cacheCreationTokens: 0,
+        },
+      });
+    },
+  } as unknown as AIService;
+  return { ai, llamadas: () => llamadas };
 }
 
 const brainOk = {
@@ -189,4 +216,33 @@ test("fallo del modelo: marca FAILED con motivo y propaga el error", async () =>
   // La fila NO se borra: queda como rastro diagnosticable.
   assert.equal(updates[0].status, "FAILED");
   assert.match(String(updates[0].failureReason), /429/);
+});
+
+test("con una generación en curso no se crea otra ni se llama al modelo", async () => {
+  const { db, creates } = fakeDb({ generacionEnCurso: true });
+  const { ai, llamadas } = aiContador();
+
+  const result = await new StrategyService(db, brainOk, ai).generateForClient({
+    clientId: "cli_1",
+  });
+
+  assert.equal(result.ok, false);
+  if (result.ok) return;
+
+  assert.equal(result.error.kind, "generacion_en_curso");
+  assert.equal(creates.length, 0, "no debería reservar una segunda fila");
+  assert.equal(llamadas(), 0, "no debería gastar tokens");
+});
+
+test("sin generación en curso la guardia deja pasar", async () => {
+  const { db, creates } = fakeDb({ generacionEnCurso: false });
+  const { ai, llamadas } = aiContador();
+
+  const result = await new StrategyService(db, brainOk, ai).generateForClient({
+    clientId: "cli_1",
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(creates.length, 1);
+  assert.equal(llamadas(), 1);
 });
