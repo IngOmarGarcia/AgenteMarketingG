@@ -9,9 +9,13 @@ import { CerrarSesionBoton } from "@/components/cerrar-sesion-boton";
 const ENLACES: Readonly<Record<Role, ReadonlyArray<{ href: string; label: string }>>> = {
   ADMIN: [
     { href: "/admin", label: "Panel" },
+    { href: "/empresas", label: "Empresas" },
     { href: "/admin/usuarios", label: "Usuarios" },
   ],
-  COLABORADOR: [{ href: "/colaborador", label: "Panel" }],
+  COLABORADOR: [
+    { href: "/colaborador", label: "Panel" },
+    { href: "/empresas", label: "Empresas" },
+  ],
   CLIENTE: [{ href: "/cliente", label: "Mis estrategias" }],
 };
 

@@ -21,8 +21,19 @@ import { NextResponse, type NextRequest } from "next/server";
  * solution". El rol se verifica en el DAL, desde los layouts.
  */
 
-/** Prefijos que exigen sesión. */
-const RUTAS_PROTEGIDAS = ["/admin", "/colaborador", "/cliente"];
+/**
+ * Prefijos que exigen sesión.
+ *
+ * `/empresas` y `/estrategias` son segmentos compartidos entre roles: quién
+ * entra exactamente lo decide el DAL. Aquí solo se exige que haya cookie.
+ */
+const RUTAS_PROTEGIDAS = [
+  "/admin",
+  "/colaborador",
+  "/cliente",
+  "/empresas",
+  "/estrategias",
+];
 
 /** Accesibles sin sesión. */
 const RUTAS_PUBLICAS = ["/login", "/auth"];
