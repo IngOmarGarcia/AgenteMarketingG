@@ -32,9 +32,15 @@ export interface Session {
   readonly clientId: string | null;
 }
 
-/** Ruta a la que se manda a alguien cuya sesión no es utilizable. */
+/**
+ * Ruta a la que se manda a alguien cuya sesión no es utilizable.
+ *
+ * Va al Route Handler y NO directamente a `/login` porque hay que cerrar la
+ * sesión de verdad antes, y eso exige escribir cookies — imposible desde el
+ * render de un Server Component.
+ */
 function signoutPath(reason: "no_profile" | "inactive"): string {
-  return `/login?error=${reason}`;
+  return `/auth/signout?reason=${reason}`;
 }
 
 /**
@@ -65,15 +71,17 @@ const getProfileSnapshot = cache(
 );
 
 /**
- * Cierra la sesión de Supabase y redirige. Se usa cuando la sesión existe pero
- * no es utilizable: sin esto el usuario queda atrapado en un bucle con una
- * cookie válida que no corresponde a ningún perfil usable.
+ * Manda a cerrar sesión. Se usa cuando la sesión existe pero no es utilizable.
+ *
+ * NO llama aquí a `signOut()`. Se intentó y no funcionaba: Next prohíbe escribir
+ * cookies durante el render de un Server Component y `createSupabaseServerClient`
+ * se traga ese fallo, así que la cookie sobrevivía, el Proxy la veía válida y
+ * devolvía al usuario a `/` — que volvía a decidir "cerrar sesión", en bucle.
+ * El cierre real ocurre en `/auth/signout`, que sí puede escribir cookies.
  *
  * No retorna: `redirect()` lanza una excepción de control de flujo.
  */
-async function signoutAndRedirect(reason: "no_profile" | "inactive"): Promise<never> {
-  const supabase = await createSupabaseServerClient();
-  await supabase.auth.signOut();
+function signoutAndRedirect(reason: "no_profile" | "inactive"): never {
   redirect(signoutPath(reason));
 }
 
