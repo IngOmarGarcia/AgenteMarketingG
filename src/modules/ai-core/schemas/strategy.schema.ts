@@ -55,6 +55,11 @@ export const RiskSchema = z.object({
 });
 
 export const StrategyOutputSchema = z.object({
+  title: z
+    .string()
+    .describe(
+      "Nombre de la estrategia: una línea que capture el ángulo principal. Sin el nombre del cliente y sin la palabra 'estrategia'. Ej: 'Captura del hueco B2B vía LinkedIn y contenido técnico'.",
+    ),
   executiveSummary: z
     .string()
     .describe("3-5 frases. Qué se va a hacer y por qué gana."),

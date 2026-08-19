@@ -15,7 +15,7 @@ import type {
  * invalidas el prefijo en cada request y el caché deja de servir para nada.
  * Todo lo volátil vive en el mensaje de usuario, después del breakpoint.
  *
- * Nota: el mínimo cacheable en claude-sonnet-4-6 es 1024 tokens. Un system
+ * Nota: el mínimo cacheable en claude-sonnet-5 es 1024 tokens. Un system
  * prompt más corto que eso simplemente no cachea (sin error, `usage
  * .cache_creation_input_tokens` sale 0).
  */
