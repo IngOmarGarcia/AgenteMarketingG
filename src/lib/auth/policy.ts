@@ -80,3 +80,21 @@ export function decideAccess(
 export function isClienteSinEmpresa(profile: ProfileSnapshot): boolean {
   return profile.role === "CLIENTE" && profile.clientId === null;
 }
+
+/**
+ * Quién puede pedir una generación para una empresa dada.
+ *
+ * ADMIN y COLABORADOR trabajan sobre toda la cartera de la agencia. Un CLIENTE
+ * solo sobre la suya: sin esta comprobación bastaría con cambiar el `clientId`
+ * de la petición para leer el brief y la estrategia de otra empresa.
+ *
+ * Vive aquí y no en la Server Action por el mismo motivo que `decideAccess`:
+ * es una regla de autorización, y sin E/S alrededor se puede probar entera.
+ */
+export function puedeGenerarPara(
+  profile: Pick<ProfileSnapshot, "role" | "clientId">,
+  clientId: string,
+): boolean {
+  if (profile.role === "CLIENTE") return profile.clientId === clientId;
+  return true;
+}

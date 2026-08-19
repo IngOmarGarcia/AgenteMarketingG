@@ -7,6 +7,7 @@ import {
   dashboardPathFor,
   decideAccess,
   isClienteSinEmpresa,
+  puedeGenerarPara,
   type ProfileSnapshot,
 } from "@/lib/auth/policy";
 
@@ -84,4 +85,22 @@ test("hay dashboard definido para todos los roles", () => {
   for (const role of ROLES) {
     assert.match(dashboardPathFor(role), /^\/[a-z]+$/);
   }
+});
+
+// ── Propiedad del cliente ─────────────────────────────────────────────────
+
+test("un CLIENTE solo puede generar para SU empresa", () => {
+  const p = perfil({ role: "CLIENTE", clientId: "cli_1" });
+  assert.equal(puedeGenerarPara(p, "cli_1"), true);
+  assert.equal(puedeGenerarPara(p, "cli_2"), false);
+});
+
+test("un CLIENTE sin empresa no puede generar para ninguna", () => {
+  const p = perfil({ role: "CLIENTE", clientId: null });
+  assert.equal(puedeGenerarPara(p, "cli_1"), false);
+});
+
+test("ADMIN y COLABORADOR pueden generar para cualquier empresa", () => {
+  assert.equal(puedeGenerarPara(perfil({ role: "ADMIN" }), "cli_9"), true);
+  assert.equal(puedeGenerarPara(perfil({ role: "COLABORADOR" }), "cli_9"), true);
 });

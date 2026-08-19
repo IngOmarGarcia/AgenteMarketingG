@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { requireRole } from "@/lib/auth/dal";
+import { puedeGenerarPara } from "@/lib/auth/policy";
 import { CompetitiveAnalysisSchema } from "@/modules/ai-core/schemas/input.schema";
 import type { StrategyOutput } from "@/modules/ai-core/schemas/strategy.schema";
 import { strategyService } from "@/modules/strategy/services/strategy.service";
@@ -12,15 +14,12 @@ import { strategyService } from "@/modules/strategy/services/strategy.service";
  *
  * Una Server Action es un endpoint POST alcanzable por cualquiera que sepa
  * mandar la petición: que el formulario solo se pinte en una página privada
- * NO es una frontera de seguridad. De ahí la validación explícita de abajo.
+ * NO es una frontera de seguridad. De ahí la validación explícita de abajo, y
+ * de ahí que la comprobación de sesión y de propiedad se hagan AQUÍ y no se
+ * deleguen en el layout de la página que pinta el formulario.
  *
- * ─────────────────────────────────────────────────────────────────────────
- * PENDIENTE (bloqueante antes de exponer esto en producción): no hay capa de
- * autenticación en el proyecto todavía, así que esta acción no comprueba
- * quién llama ni si ese usuario posee el cliente. Generar una estrategia
- * cuesta tokens y filtra el brief del cliente en el retorno. Cuando entre
- * auth, el bloque marcado más abajo debe rellenarse ANTES de desplegar.
- * ─────────────────────────────────────────────────────────────────────────
+ * Lo que hay en juego si esto queda abierto: generar una estrategia cuesta
+ * tokens de Anthropic y devuelve el brief del cliente en la respuesta.
  */
 
 const GenerateStrategyActionSchema = z.object({
@@ -57,11 +56,10 @@ export type GenerateStrategyActionResult =
 export async function generateStrategyAction(
   rawInput: GenerateStrategyActionInput,
 ): Promise<GenerateStrategyActionResult> {
-  // ── Auth: rellenar cuando exista la capa de sesión ──────────────────────
-  // const session = await auth();
-  // if (!session?.user) return { ok: false, kind: "unauthorized", ... };
-  // if (!(await ownsClient(session.user, input.clientId))) { ... }
-  // ────────────────────────────────────────────────────────────────────────
+  // Sin sesión utilizable, `requireRole` redirige a /login y esta función no
+  // llega a ejecutarse. Los tres roles pueden pedir una generación; cuál puede
+  // pedirla para QUÉ empresa lo decide `puedeGenerarPara` más abajo.
+  const session = await requireRole("ADMIN", "COLABORADOR", "CLIENTE");
 
   const parsed = GenerateStrategyActionSchema.safeParse(rawInput);
   if (!parsed.success) {
@@ -71,6 +69,19 @@ export async function generateStrategyAction(
       message: parsed.error.issues
         .map((i) => `${i.path.join(".")} ${i.message}`)
         .join("; "),
+      retryable: false,
+    };
+  }
+
+  // Después de validar, no antes: la comprobación necesita un clientId ya
+  // normalizado. Un CLIENTE solo puede generar para su propia empresa.
+  if (!puedeGenerarPara(session, parsed.data.clientId)) {
+    // Mismo mensaje tanto si la empresa no existe como si es de otro: decir
+    // cuál de las dos cosas es permite enumerar clientes a base de probar ids.
+    return {
+      ok: false,
+      kind: "forbidden",
+      message: "No tienes acceso a esta empresa.",
       retryable: false,
     };
   }
@@ -96,7 +107,10 @@ export async function generateStrategyAction(
     };
   }
 
-  revalidatePath(`/clients/${parsed.data.clientId}`);
+  // Las dos vistas que listan estrategias. `/clients/<id>` no existe en el
+  // árbol de rutas, así que revalidarla no refrescaba nada.
+  revalidatePath("/cliente");
+  revalidatePath("/admin");
 
   return {
     ok: true,
