@@ -6,7 +6,10 @@ import { verifySession } from "@/lib/auth/dal";
 import { puedeVerEstrategia } from "@/lib/auth/policy";
 import { prisma } from "@/lib/prisma";
 import { StrategyOutputSchema } from "@/modules/ai-core/schemas/strategy.schema";
+import { puedeAprobarse } from "@/modules/strategy/transiciones";
 import { EstrategiaVista } from "@/components/estrategia-vista";
+import { claseTono } from "@/components/estado-estrategia";
+import { AprobarBoton } from "@/app/(protected)/estrategias/[id]/aprobar-boton";
 
 /**
  * Detalle de una estrategia. Abierta a los tres roles: quién ve qué lo decide
@@ -73,6 +76,24 @@ export default async function EstrategiaPage({
           })}
         </p>
       </header>
+
+      {/* La aprobación va en el detalle y no en una lista a propósito: aprobar
+          significa "la he leído y respondo por ella", y un botón junto a un
+          título en una tabla invita a darle sin haberla abierto.
+
+          Solo se pinta si la transición es legal. El servidor la comprueba
+          igualmente: esto evita ofrecer un clic que va a fallar, no es la
+          frontera. */}
+      {esDelEquipo && puedeAprobarse(estrategia.status).permitida && (
+        <section className={claseTono("ok", "rounded-lg p-5")}>
+          <h2 className="font-medium">¿Damos esta estrategia por buena?</h2>
+          <p className="mt-1 mb-4 text-sm opacity-80">
+            Aprobarla la marca como revisada por el equipo y la suma al contador
+            de aprobadas del panel.
+          </p>
+          <AprobarBoton estrategiaId={estrategia.id} />
+        </section>
+      )}
 
       <Cuerpo
         content={estrategia.content}
