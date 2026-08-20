@@ -117,9 +117,54 @@ model Strategy {
 
   client  Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
   outcome StrategyOutcome?
+  tasks   StrategyTask[]
 
   @@index([clientId, createdAt(sort: Desc)])
   @@index([sector, status])
+}
+
+enum TareaEstado {
+  POR_HACER
+  EN_CURSO
+  HECHA
+}
+
+/// De qué parte de la estrategia salió la tarea. Permite agrupar y explicarle
+/// al cliente por qué está ahí, en vez de darle una lista de frases sueltas.
+enum TareaOrigen {
+  QUICK_WIN
+  CANAL
+  PILAR
+}
+
+/// Tarjeta del tablero de ejecución de una estrategia.
+///
+/// Vive en su propia tabla y no dentro de `Strategy.content` porque ese JSON
+/// está validado contra StrategyOutputSchema: meterle el estado de cada tarea
+/// rompería la validación al leer, que es la defensa de la vista de detalle.
+model StrategyTask {
+  id         String @id @default(cuid())
+  strategyId String
+
+  titulo  String
+  detalle String? @db.Text
+
+  estado TareaEstado @default(POR_HACER)
+  origen TareaOrigen
+
+  /// Posición dentro de su columna. Al mover, la tarea se encola al final.
+  orden Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Cascade: una tarea sin estrategia no significa nada. Una estrategia
+  /// APPROVED no se puede borrar, así que un tablero en uso no desaparece.
+  strategy Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+  /// Cubre exactamente la consulta del tablero: las tareas de una estrategia,
+  /// agrupadas por columna y ordenadas dentro de ella.
+  @@index([strategyId, estado, orden])
 }
 
 model StrategyOutcome {

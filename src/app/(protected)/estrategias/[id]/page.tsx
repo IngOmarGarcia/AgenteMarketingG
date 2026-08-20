@@ -90,6 +90,27 @@ export default async function EstrategiaPage({
           Solo se pinta si la transición es legal. El servidor la comprueba
           igualmente: esto evita ofrecer un clic que va a fallar, no es la
           frontera. */}
+      {/* El tablero solo existe sobre una estrategia aprobada, así que el
+          enlace tampoco aparece antes: ofrecerlo llevaría a un aviso. */}
+      {estrategia.status === StrategyStatus.APPROVED && (
+        <Link
+          href={`/estrategias/${estrategia.id}/tablero`}
+          className={claseTono(
+            "info",
+            "flex flex-wrap items-center justify-between gap-2 rounded-lg p-5",
+          )}
+        >
+          <div>
+            <h2 className="font-medium">Plan de ejecución</h2>
+            <p className="mt-1 text-sm opacity-80">
+              Las acciones de esta estrategia, en un tablero para seguir por
+              dónde va cada una.
+            </p>
+          </div>
+          <span className="text-sm font-medium">Abrir el tablero →</span>
+        </Link>
+      )}
+
       {esDelEquipo && puedeAprobarse(estrategia.status).permitida && (
         <section className={claseTono("ok", "rounded-lg p-5")}>
           <h2 className="font-medium">¿Damos esta estrategia por buena?</h2>

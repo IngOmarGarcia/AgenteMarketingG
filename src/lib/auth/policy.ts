@@ -130,3 +130,22 @@ export function puedeVerEstrategia(
   if (profile.clientId !== estrategia.clientId) return false;
   return ESTADOS_VISIBLES_PARA_CLIENTE.includes(estrategia.status);
 }
+
+/**
+ * Quién puede mover las tarjetas del tablero de ejecución.
+ *
+ * SOLO el CLIENTE, y solo en las estrategias de su empresa. Es la única regla
+ * del sistema que le da al cliente más permiso que al equipo, y es deliberado:
+ * el tablero refleja lo que la empresa está ejecutando de verdad. Si ADMIN o
+ * COLABORADOR pudieran mover las tarjetas, el seguimiento dejaría de ser un
+ * hecho y pasaría a ser una suposición nuestra.
+ *
+ * El equipo sí ve el tablero: necesita saber por dónde va para asesorar.
+ */
+export function puedeMoverTareas(
+  profile: Pick<ProfileSnapshot, "role" | "clientId">,
+  estrategia: { clientId: string },
+): boolean {
+  if (profile.role !== "CLIENTE") return false;
+  return profile.clientId === estrategia.clientId;
+}

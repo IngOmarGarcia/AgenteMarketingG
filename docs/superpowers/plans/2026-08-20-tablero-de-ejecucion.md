@@ -56,11 +56,11 @@ Tailwind 4 · `node:test` + `tsx`.
 **Interfaces:**
 - Produce: `prisma.strategyTask`, enums `TareaEstado` y `TareaOrigen`.
 
-- [ ] **Paso 1: Añadir enums y modelo**
+- [x] **Paso 1: Añadir enums y modelo**
 
 Tal cual la spec. `Strategy` gana la relación inversa `tasks StrategyTask[]`.
 
-- [ ] **Paso 2: Aplicar**
+- [x] **Paso 2: Aplicar**
 
 ```bash
 npm run db:generate && npm run db:push && npm run db:constraints
@@ -68,7 +68,7 @@ npm run db:generate && npm run db:push && npm run db:constraints
 
 Esperado: sincroniza sin avisos de pérdida de datos. Si avisa, PARAR.
 
-- [ ] **Paso 3: Commit**
+- [x] **Paso 3: Commit**
 
 ```bash
 git add prisma/ && git commit -m "feat(db): modelo StrategyTask para el tablero"
@@ -90,7 +90,7 @@ git add prisma/ && git commit -m "feat(db): modelo StrategyTask para el tablero"
   - `siguienteOrden(tareas: { estado; orden }[], estado): number`
   - `parseEstadoTarea(valor: string): TareaEstado | null`
 
-- [ ] **Paso 1: Escribir los tests que fallan**
+- [x] **Paso 1: Escribir los tests que fallan**
 
 ```ts
 const SALIDA: StrategyOutput = {
@@ -149,15 +149,15 @@ test("un estado de columna inválido no se acepta", () => {
 });
 ```
 
-- [ ] **Paso 2: Ejecutar y ver que falla** — `npm test` → módulo inexistente.
+- [x] **Paso 2: Ejecutar y ver que falla** — `npm test` → módulo inexistente.
 
-- [ ] **Paso 3: Implementar**
+- [x] **Paso 3: Implementar**
 
 `derivarTareas` recorre `quickWins`, luego `channelMix`, luego `contentPillars`,
 asignando `orden` con un contador único. El orden importa: los quick wins son lo
 ejecutable en 30 días y deben salir arriba.
 
-- [ ] **Paso 4: Ejecutar y ver que pasa** — `npm test` → PASS.
+- [x] **Paso 4: Ejecutar y ver que pasa** — `npm test` → PASS.
 
 ---
 
@@ -168,7 +168,7 @@ ejecutable en 30 días y deben salir arriba.
 **Interfaces:**
 - Produce: `puedeMoverTareas(profile, estrategia: { clientId: string }): boolean`
 
-- [ ] **Paso 1: Escribir los tests que fallan**
+- [x] **Paso 1: Escribir los tests que fallan**
 
 ```ts
 test("solo el CLIENTE de la empresa mueve tarjetas", () => {
@@ -191,11 +191,11 @@ test("un CLIENTE sin empresa no mueve nada", () => {
 });
 ```
 
-- [ ] **Paso 2: Ejecutar y ver que falla.**
+- [x] **Paso 2: Ejecutar y ver que falla.**
 
-- [ ] **Paso 3: Implementar** — tres líneas, junto a `puedeVerEstrategia`.
+- [x] **Paso 3: Implementar** — tres líneas, junto a `puedeVerEstrategia`.
 
-- [ ] **Paso 4: Verificar y commitear** las tareas 2 y 3 juntas.
+- [x] **Paso 4: Verificar y commitear** las tareas 2 y 3 juntas.
 
 ---
 
@@ -209,7 +209,7 @@ test("un CLIENTE sin empresa no mueve nada", () => {
   - `cargarTablero(strategyId): Promise<TareaFila[]>` — siembra si hace falta
   - `moverTarea(tareaId, estado): Promise<Result<void, string>>`
 
-- [ ] **Paso 1: Siembra idempotente**
+- [x] **Paso 1: Siembra idempotente**
 
 ```ts
 // Solo si NO hay ninguna. Re-sembrar sobre un tablero con contenido
@@ -223,12 +223,12 @@ if (!parsed.success) return [];   // filas antiguas: nada que sembrar
 await prisma.strategyTask.createMany({ data: derivarTareas(parsed.data).map(...) });
 ```
 
-- [ ] **Paso 2: Movimiento**
+- [x] **Paso 2: Movimiento**
 
 `moverTarea` calcula el nuevo `orden` con `siguienteOrden` sobre las tareas de
 esa estrategia y actualiza estado y orden en una sola escritura.
 
-- [ ] **Paso 3: Verificar tipos** — `npx tsc --noEmit`.
+- [x] **Paso 3: Verificar tipos** — `npx tsc --noEmit`.
 
 ---
 
@@ -236,7 +236,7 @@ esa estrategia y actualiza estado y orden en una sola escritura.
 
 **Files:** `src/modules/tablero/actions.ts`
 
-- [ ] **Paso 1: Implementar `moverTareaAction`**
+- [x] **Paso 1: Implementar `moverTareaAction`**
 
 ```ts
 const session = await verifySession();
@@ -254,7 +254,7 @@ if (!puedeMoverTareas(session, tarea.strategy)) {
 }
 ```
 
-- [ ] **Paso 2: `revalidatePath`** de la ruta del tablero.
+- [x] **Paso 2: `revalidatePath`** de la ruta del tablero.
 
 ---
 
@@ -265,32 +265,32 @@ if (!puedeMoverTareas(session, tarea.strategy)) {
 - `src/components/tablero/{tablero-kanban,columna,tarjeta-tarea}.tsx`
 - `package.json` — `@dnd-kit/core`
 
-- [ ] **Paso 1: Instalar la dependencia**
+- [x] **Paso 1: Instalar la dependencia**
 
 ```bash
 npm install @dnd-kit/core
 ```
 
-- [ ] **Paso 2: La página** — carga, permisos y avisos
+- [x] **Paso 2: La página** — carga, permisos y avisos
 
 `verifySession` → `puedeVerEstrategia` o `notFound()`. Si la estrategia no está
 `APPROVED`, aviso en lugar de tablero. Calcula `puedeMover` y lo pasa al
 componente.
 
-- [ ] **Paso 3: Tarjeta arrastrable**
+- [x] **Paso 3: Tarjeta arrastrable**
 
 ```tsx
 const { attributes, listeners, setNodeRef, transform, isDragging } =
   useDraggable({ id: tarea.id, disabled: !puedeMover });
 ```
 
-- [ ] **Paso 4: Columna soltable**
+- [x] **Paso 4: Columna soltable**
 
 ```tsx
 const { setNodeRef, isOver } = useDroppable({ id: estado });
 ```
 
-- [ ] **Paso 5: El tablero, con escritura optimista**
+- [x] **Paso 5: El tablero, con escritura optimista**
 
 ```tsx
 const sensors = useSensors(
@@ -321,23 +321,23 @@ function onDragEnd({ active, over }: DragEndEvent) {
 }
 ```
 
-- [ ] **Paso 6: Enlace desde el detalle** de la estrategia, solo si está aprobada.
+- [x] **Paso 6: Enlace desde el detalle** de la estrategia, solo si está aprobada.
 
-- [ ] **Paso 7: Verificar**
+- [x] **Paso 7: Verificar**
 
 ```bash
 npm test && npx tsc --noEmit && npx eslint src scripts && npx next build
 ```
 
-- [ ] **Paso 8: Commit**
+- [x] **Paso 8: Commit**
 
 ---
 
 ## Task 7: Verificación contra la base de datos
 
-- [ ] **Paso 1** — Sembrar el tablero de una estrategia aprobada real y
+- [x] **Paso 1** — Sembrar el tablero de una estrategia aprobada real y
   comprobar el número de tareas y su reparto por columna.
-- [ ] **Paso 2** — Mover una tarea y comprobar estado y orden.
-- [ ] **Paso 3** — Comprobar que una segunda carga NO re-siembra.
+- [x] **Paso 2** — Mover una tarea y comprobar estado y orden.
+- [x] **Paso 3** — Comprobar que una segunda carga NO re-siembra.
 - [ ] **Paso 4** — Recorrido manual en navegador: arrastrar como CLIENTE, y
   comprobar que un COLABORADOR no puede.

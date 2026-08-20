@@ -8,6 +8,7 @@ import {
   decideAccess,
   isClienteSinEmpresa,
   puedeGenerarPara,
+  puedeMoverTareas,
   puedeVerEstrategia,
   type ProfileSnapshot,
 } from "@/lib/auth/policy";
@@ -163,4 +164,30 @@ test("un CLIENTE no ve los estados internos de su propia empresa", () => {
 test("un CLIENTE sin empresa no ve ninguna estrategia", () => {
   const p = perfil({ role: "CLIENTE", clientId: null });
   assert.equal(puedeVerEstrategia(p, VISIBLE), false);
+});
+
+// ── Tablero de ejecución ──────────────────────────────────────────────────
+
+test("solo el CLIENTE de la empresa mueve las tarjetas", () => {
+  const p = perfil({ role: "CLIENTE", clientId: "cli_1" });
+  assert.equal(puedeMoverTareas(p, { clientId: "cli_1" }), true);
+  assert.equal(puedeMoverTareas(p, { clientId: "cli_2" }), false);
+});
+
+test("el equipo VE el tablero pero no lo mueve", () => {
+  // Única regla del sistema que da al cliente más permiso que al equipo, y es
+  // deliberada: si el equipo moviera las tarjetas, el seguimiento dejaría de
+  // ser un hecho y pasaría a ser una suposición nuestra.
+  for (const role of ["ADMIN", "COLABORADOR"] as const) {
+    assert.equal(
+      puedeMoverTareas(perfil({ role }), { clientId: "cli_1" }),
+      false,
+      `${role} no debería poder mover tarjetas`,
+    );
+  }
+});
+
+test("un CLIENTE sin empresa no mueve nada", () => {
+  const p = perfil({ role: "CLIENTE", clientId: null });
+  assert.equal(puedeMoverTareas(p, { clientId: "cli_1" }), false);
 });
