@@ -7,17 +7,36 @@ import {
   aprobarEstrategiaAction,
   type AprobarResultado,
 } from "@/modules/strategy/actions/aprobar-estrategia.action";
+import { desaprobarEstrategiaAction } from "@/modules/strategy/actions/desaprobar-estrategia.action";
 
 /**
- * Botón de aprobar.
+ * Los dos botones de revisión: aprobar y retirar la aprobación.
  *
- * Es un `<form>` con Server Action y no un `onClick`: así funciona aunque el
- * JavaScript no haya cargado todavía, que en una acción que cambia la base de
- * datos es la diferencia entre "tarda en responder" y "no hace nada".
+ * Son `<form>` con Server Action y no `onClick`: así funcionan aunque el
+ * JavaScript no haya cargado todavía, que en una acción que cambia lo que ve un
+ * cliente es la diferencia entre "tarda en responder" y "no hace nada".
  */
-export function AprobarBoton({ estrategiaId }: { estrategiaId: string }) {
+
+type Accion = (
+  prev: AprobarResultado | null,
+  formData: FormData,
+) => Promise<AprobarResultado>;
+
+function FormularioRevision({
+  estrategiaId,
+  accion,
+  texto,
+  textoPendiente,
+  clases,
+}: {
+  estrategiaId: string;
+  accion: Accion;
+  texto: string;
+  textoPendiente: string;
+  clases: string;
+}) {
   const [resultado, formAction] = useActionState<AprobarResultado | null, FormData>(
-    aprobarEstrategiaAction,
+    accion,
     null,
   );
 
@@ -25,7 +44,7 @@ export function AprobarBoton({ estrategiaId }: { estrategiaId: string }) {
     <form action={formAction} className="space-y-3">
       <input type="hidden" name="estrategiaId" value={estrategiaId} />
 
-      <Boton />
+      <Boton texto={texto} textoPendiente={textoPendiente} clases={clases} />
 
       {resultado && (
         <p
@@ -41,7 +60,15 @@ export function AprobarBoton({ estrategiaId }: { estrategiaId: string }) {
   );
 }
 
-function Boton() {
+function Boton({
+  texto,
+  textoPendiente,
+  clases,
+}: {
+  texto: string;
+  textoPendiente: string;
+  clases: string;
+}) {
   // `useFormStatus` debe leerse desde un hijo del <form>, no desde el propio
   // componente que lo renderiza: en el padre siempre devolvería pending=false.
   const { pending } = useFormStatus();
@@ -50,11 +77,40 @@ function Boton() {
     <button
       type="submit"
       disabled={pending}
-      className={`rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(16,185,129,0.35)] disabled:cursor-not-allowed disabled:opacity-60 ${
+      className={`rounded-lg px-5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${clases} ${
         pending ? "" : "hover-scale"
       }`}
     >
-      {pending ? "Aprobando…" : "Aprobar estrategia"}
+      {pending ? textoPendiente : texto}
     </button>
+  );
+}
+
+export function AprobarBoton({ estrategiaId }: { estrategiaId: string }) {
+  return (
+    <FormularioRevision
+      estrategiaId={estrategiaId}
+      accion={aprobarEstrategiaAction}
+      texto="Aprobar y publicar al cliente"
+      textoPendiente="Aprobando…"
+      clases="bg-emerald-600 text-white shadow-[0_8px_24px_rgba(16,185,129,0.35)]"
+    />
+  );
+}
+
+/**
+ * De contorno y no relleno: retirar una aprobación es la acción rara y
+ * destructiva de las dos. Que no compita visualmente con la principal es
+ * deliberado.
+ */
+export function DesaprobarBoton({ estrategiaId }: { estrategiaId: string }) {
+  return (
+    <FormularioRevision
+      estrategiaId={estrategiaId}
+      accion={desaprobarEstrategiaAction}
+      texto="Retirar aprobación"
+      textoPendiente="Retirando…"
+      clases="border border-white/40 bg-transparent"
+    />
   );
 }

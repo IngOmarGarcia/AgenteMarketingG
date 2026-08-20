@@ -3,7 +3,7 @@ import { StrategyStatus } from "@prisma/client";
 
 import { requireRole } from "@/lib/auth/dal";
 import { prisma } from "@/lib/prisma";
-import { claseTarjeta, EstadoBadge } from "@/components/estado-estrategia";
+import { claseTarjeta, claseTono } from "@/components/estado-estrategia";
 
 /**
  * Vista del cliente final: sus estrategias ya terminadas.
@@ -38,13 +38,21 @@ export default async function ClientePage() {
     prisma.strategy.findMany({
       where: {
         clientId: session.clientId,
-        // El cliente no ve borradores ni fallos: solo lo que está terminado.
-        status: { in: [StrategyStatus.READY, StrategyStatus.APPROVED] },
+        // Solo lo aprobado. Una READY está generada pero nadie del equipo ha
+        // respondido aún por ella; el filtro es el mismo que aplica
+        // `puedeVerEstrategia`, y los dos deben decir lo mismo o el cliente
+        // vería en la lista algo que al abrir le da 404.
+        status: StrategyStatus.APPROVED,
       },
       select: { id: true, title: true, status: true, createdAt: true },
       orderBy: { createdAt: "desc" },
     }),
   ]);
+
+  // La más reciente es la que está en vigor; las demás son el histórico. Se
+  // separan aquí y no en la consulta porque son la misma consulta: partirla en
+  // dos sería un viaje extra a Postgres para reordenar lo que ya vino ordenado.
+  const [vigente, ...anteriores] = estrategias;
 
   return (
     <div className="space-y-8">
@@ -52,38 +60,77 @@ export default async function ClientePage() {
         <h1 className="text-2xl font-semibold">
           {empresa?.name ?? "Mis estrategias"}
         </h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 text-sm opacity-70">
           Estrategias elaboradas para tu empresa.
         </p>
       </header>
 
-      {estrategias.length === 0 ? (
-        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Todavía no hay ninguna estrategia lista. Aparecerán aquí en cuanto el
-            equipo las publique.
+      {!vigente ? (
+        <div className={claseTono("neutral", "rounded-lg p-6")}>
+          <p className="text-sm opacity-80">
+            Todavía no hay ninguna estrategia publicada. Aparecerá aquí en cuanto
+            el equipo termine de revisarla.
           </p>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {estrategias.map((e) => (
-            <li key={e.id} className={claseTarjeta(e.status, "rounded-lg p-4")}>
+        <>
+          <section>
+            <h2 className="text-sm font-medium tracking-wide uppercase opacity-70">
+              Tu estrategia en vigor
+            </h2>
+
+            <Link
+              href={`/estrategias/${vigente.id}`}
+              className={claseTarjeta(vigente.status, "mt-3 block rounded-lg p-6")}
+            >
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="font-medium">
-                  <Link href={`/estrategias/${e.id}`} className="hover:underline">
-                    {e.title}
-                  </Link>
-                </h2>
+                <h3 className="text-lg font-medium">{vigente.title}</h3>
                 <time className="text-xs opacity-70">
-                  {e.createdAt.toLocaleDateString("es-ES")}
+                  {vigente.createdAt.toLocaleDateString("es-ES", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
                 </time>
               </div>
-              <div className="mt-2">
-                <EstadoBadge status={e.status} />
-              </div>
-            </li>
-          ))}
-        </ul>
+              <p className="mt-2 text-sm opacity-80">Ver la estrategia completa →</p>
+            </Link>
+          </section>
+
+          {anteriores.length > 0 && (
+            <section>
+              <h2 className="text-sm font-medium tracking-wide uppercase opacity-70">
+                Anteriores{" "}
+                <span className="font-normal normal-case">
+                  ({anteriores.length})
+                </span>
+              </h2>
+              <p className="mt-1 text-sm opacity-60">
+                Siguen accesibles como referencia de lo que se trabajó antes.
+              </p>
+
+              <ul className="mt-3 space-y-2">
+                {anteriores.map((e) => (
+                  <li key={e.id} className={claseTono("neutral", "rounded-lg p-4")}>
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <h3 className="font-medium">
+                        <Link
+                          href={`/estrategias/${e.id}`}
+                          className="hover:underline"
+                        >
+                          {e.title}
+                        </Link>
+                      </h3>
+                      <time className="text-xs opacity-70">
+                        {e.createdAt.toLocaleDateString("es-ES")}
+                      </time>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </>
       )}
     </div>
   );

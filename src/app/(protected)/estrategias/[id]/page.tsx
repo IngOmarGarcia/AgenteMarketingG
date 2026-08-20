@@ -6,10 +6,16 @@ import { verifySession } from "@/lib/auth/dal";
 import { puedeVerEstrategia } from "@/lib/auth/policy";
 import { prisma } from "@/lib/prisma";
 import { StrategyOutputSchema } from "@/modules/ai-core/schemas/strategy.schema";
-import { puedeAprobarse } from "@/modules/strategy/transiciones";
+import {
+  puedeAprobarse,
+  puedeDesaprobarse,
+} from "@/modules/strategy/transiciones";
 import { EstrategiaVista } from "@/components/estrategia-vista";
 import { claseTono } from "@/components/estado-estrategia";
-import { AprobarBoton } from "@/app/(protected)/estrategias/[id]/aprobar-boton";
+import {
+  AprobarBoton,
+  DesaprobarBoton,
+} from "@/app/(protected)/estrategias/[id]/aprobar-boton";
 
 /**
  * Detalle de una estrategia. Abierta a los tres roles: quién ve qué lo decide
@@ -88,10 +94,21 @@ export default async function EstrategiaPage({
         <section className={claseTono("ok", "rounded-lg p-5")}>
           <h2 className="font-medium">¿Damos esta estrategia por buena?</h2>
           <p className="mt-1 mb-4 text-sm opacity-80">
-            Aprobarla la marca como revisada por el equipo y la suma al contador
-            de aprobadas del panel.
+            El cliente todavía NO puede verla. Aprobarla es lo que se la publica,
+            y la suma al contador de aprobadas del panel.
           </p>
           <AprobarBoton estrategiaId={estrategia.id} />
+        </section>
+      )}
+
+      {esDelEquipo && puedeDesaprobarse(estrategia.status).permitida && (
+        <section className={claseTono("neutral", "rounded-lg p-5")}>
+          <h2 className="font-medium">Publicada para el cliente</h2>
+          <p className="mt-1 mb-4 text-sm opacity-80">
+            Retirar la aprobación la devuelve a revisión y deja de verla el
+            cliente al instante. No borra nada: el contenido se queda como está.
+          </p>
+          <DesaprobarBoton estrategiaId={estrategia.id} />
         </section>
       )}
 

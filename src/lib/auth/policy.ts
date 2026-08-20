@@ -100,14 +100,17 @@ export function puedeGenerarPara(
 }
 
 /**
- * Estados que un CLIENTE puede ver. El resto son internos del equipo: enseñarle
- * un FAILED o un GENERATING sería exponerle un problema operativo nuestro sobre
- * el que no puede hacer nada.
+ * Estados que un CLIENTE puede ver: solo APPROVED.
+ *
+ * `READY` estuvo aquí y se quitó a propósito. Significa "el modelo terminó",
+ * no "el equipo responde por esto", así que dejarlo visible convertía la
+ * aprobación en un gesto sin efecto: el cliente ya había visto el texto sin
+ * revisar. Ahora aprobar ES el acto de publicar.
+ *
+ * El resto son internos del equipo. Enseñarle un FAILED o un GENERATING sería
+ * exponerle un problema operativo nuestro sobre el que no puede hacer nada.
  */
-const ESTADOS_VISIBLES_PARA_CLIENTE: readonly StrategyStatus[] = [
-  "READY",
-  "APPROVED",
-];
+const ESTADOS_VISIBLES_PARA_CLIENTE: readonly StrategyStatus[] = ["APPROVED"];
 
 /**
  * Quién puede abrir una estrategia concreta.

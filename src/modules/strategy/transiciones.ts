@@ -34,3 +34,26 @@ export function puedeAprobarse(status: StrategyStatus): ResultadoTransicion {
   if (status === "READY") return { permitida: true };
   return { permitida: false, motivo: MOTIVO_POR_ESTADO[status] };
 }
+
+/**
+ * `APPROVED → READY`. Deshace la aprobación.
+ *
+ * Existe porque aprobar es lo que publica: desde que `ESTADOS_VISIBLES_PARA_CLIENTE`
+ * solo contiene `APPROVED`, dar el visto bueno a la estrategia equivocada la
+ * pone delante del cliente al instante. Sin vuelta atrás, la única salida sería
+ * tocar la base de datos a mano.
+ *
+ * Devuelve a `READY` y no a `DRAFT`: el contenido generado sigue ahí y sigue
+ * siendo válido; lo que se retira es el visto bueno del equipo, no el trabajo.
+ */
+export function puedeDesaprobarse(status: StrategyStatus): ResultadoTransicion {
+  if (status === "APPROVED") return { permitida: true };
+
+  return {
+    permitida: false,
+    motivo:
+      status === "READY"
+        ? "Esta estrategia no está aprobada: ya está pendiente de revisión."
+        : `No está aprobada, así que no hay nada que retirar (estado actual: ${status}).`,
+  };
+}

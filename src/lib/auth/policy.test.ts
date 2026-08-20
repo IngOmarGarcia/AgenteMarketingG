@@ -108,7 +108,7 @@ test("ADMIN y COLABORADOR pueden generar para cualquier empresa", () => {
 
 // ── Visibilidad de una estrategia ─────────────────────────────────────────
 
-const VISIBLE = { clientId: "cli_1", status: "READY" as StrategyStatus };
+const VISIBLE = { clientId: "cli_1", status: "APPROVED" as StrategyStatus };
 
 test("ADMIN y COLABORADOR ven cualquier estrategia en cualquier estado", () => {
   for (const role of ["ADMIN", "COLABORADOR"] as const) {
@@ -121,23 +121,37 @@ test("ADMIN y COLABORADOR ven cualquier estrategia en cualquier estado", () => {
   }
 });
 
-test("un CLIENTE ve las de su empresa en READY y APPROVED", () => {
+test("un CLIENTE ve las de su empresa solo si están aprobadas", () => {
   const p = perfil({ role: "CLIENTE", clientId: "cli_1" });
   assert.equal(puedeVerEstrategia(p, VISIBLE), true);
-  assert.equal(
-    puedeVerEstrategia(p, { clientId: "cli_1", status: "APPROVED" }),
-    true,
-  );
 });
 
-test("un CLIENTE no ve las de otra empresa", () => {
+test("un CLIENTE NO ve una READY: aprobar es lo que publica", () => {
+  // READY significa "el modelo terminó", no "el equipo responde por esto".
+  // Si el cliente la viera antes de la revisión, aprobar no cambiaría nada.
   const p = perfil({ role: "CLIENTE", clientId: "cli_1" });
-  assert.equal(puedeVerEstrategia(p, { clientId: "cli_2", status: "READY" }), false);
+  assert.equal(puedeVerEstrategia(p, { clientId: "cli_1", status: "READY" }), false);
+});
+
+test("un CLIENTE no ve las aprobadas de otra empresa", () => {
+  // Con APPROVED a propósito: así lo que se prueba es la regla de propiedad y
+  // no el estado, que ya la haría fallar por otro motivo.
+  const p = perfil({ role: "CLIENTE", clientId: "cli_1" });
+  assert.equal(
+    puedeVerEstrategia(p, { clientId: "cli_2", status: "APPROVED" }),
+    false,
+  );
 });
 
 test("un CLIENTE no ve los estados internos de su propia empresa", () => {
   const p = perfil({ role: "CLIENTE", clientId: "cli_1" });
-  for (const status of ["DRAFT", "GENERATING", "FAILED", "ARCHIVED"] as const) {
+  for (const status of [
+    "DRAFT",
+    "GENERATING",
+    "READY",
+    "FAILED",
+    "ARCHIVED",
+  ] as const) {
     assert.equal(
       puedeVerEstrategia(p, { clientId: "cli_1", status }),
       false,
