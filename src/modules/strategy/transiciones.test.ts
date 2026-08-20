@@ -5,6 +5,7 @@ import type { StrategyStatus } from "@prisma/client";
 import {
   puedeAprobarse,
   puedeDesaprobarse,
+  puedeEliminarse,
 } from "@/modules/strategy/transiciones";
 
 const TODOS: StrategyStatus[] = [
@@ -82,6 +83,42 @@ test("desaprobar una que no lo estaba avisa en vez de fingir", () => {
   assert.equal(r.permitida, false);
   if (r.permitida) return;
   assert.match(r.motivo, /no está aprobada/i);
+});
+
+// ── Eliminar ──────────────────────────────────────────────────────────────
+
+test("una estrategia APROBADA no se puede eliminar NUNCA", () => {
+  // La regla crítica de esta entrega: APPROVED es lo que el cliente tiene
+  // delante y lo que sostiene la memoria histórica. Si algún día alguien
+  // relaja esto, que falle aquí.
+  const r = puedeEliminarse("APPROVED");
+  assert.equal(r.permitida, false);
+  if (r.permitida) return;
+  assert.match(r.motivo, /aprobada/i);
+});
+
+test("una generación en curso no se puede eliminar", () => {
+  // Borrar la fila mientras el modelo escribe deja tokens en vuelo apuntando a
+  // algo que ya no existe.
+  const r = puedeEliminarse("GENERATING");
+  assert.equal(r.permitida, false);
+  if (r.permitida) return;
+  assert.match(r.motivo, /curso|termine/i);
+});
+
+test("los estados descartables sí se pueden eliminar", () => {
+  for (const status of ["DRAFT", "READY", "ARCHIVED", "FAILED"] as const) {
+    assert.equal(
+      puedeEliminarse(status).permitida,
+      true,
+      `${status} debería poder eliminarse`,
+    );
+  }
+});
+
+test("exactamente dos estados quedan protegidos", () => {
+  const protegidos = TODOS.filter((s) => !puedeEliminarse(s).permitida);
+  assert.deepEqual(protegidos.sort(), ["APPROVED", "GENERATING"]);
 });
 
 test("aprobar y desaprobar son inversas exactas", () => {

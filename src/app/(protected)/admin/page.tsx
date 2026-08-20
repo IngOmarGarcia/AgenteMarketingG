@@ -9,10 +9,23 @@ import {
   type TonoEstado,
 } from "@/components/estado-estrategia";
 import {
-  enlaceAdmin,
+  desdeCuando,
+  enlacePanel,
   parseEstadoFiltro,
+  parsePagina,
+  parsePeriodo,
   PARAM_ESTADO,
+  PARAM_PAGINA,
+  PARAM_PERIODO,
+  POR_PAGINA,
 } from "@/modules/strategy/filtros";
+import { puedeEliminarse } from "@/modules/strategy/transiciones";
+import {
+  FiltroPeriodo,
+  Paginacion,
+  type EstadoFiltros,
+} from "@/components/controles-panel";
+import { EliminarEstrategiaBoton } from "@/components/eliminar-estrategia-boton";
 
 /**
  * Panel maestro: estado global agregado y la lista de estrategias detrás.
@@ -30,9 +43,6 @@ import {
  * —trabajos pendientes, reintentos, dead-letter—, que hoy no existe.
  */
 
-/** Cuántas estrategias se listan como mucho. */
-const LIMITE = 25;
-
 export default async function AdminPage({
   searchParams,
 }: {
@@ -40,26 +50,38 @@ export default async function AdminPage({
 }) {
   const params = await searchParams;
   const filtro = parseEstadoFiltro(params[PARAM_ESTADO]);
+  const periodo = parsePeriodo(params[PARAM_PERIODO]);
+  const pagina = parsePagina(params[PARAM_PAGINA]);
 
-  const [porEstado, clientes, estrategias] = await Promise.all([
-    // Los conteos son SIEMPRE globales, nunca filtrados: si la tarjeta de
-    // "Fallidas" mostrara cero por estar filtrando por "Listas", las tarjetas
-    // dejarían de servir para navegar, que es justo lo que se les acaba de
-    // pedir que hagan.
+  const corte = desdeCuando(periodo);
+
+  // El mismo `where` para contar y para listar. Repetirlo por separado es cómo
+  // acaban desincronizándose el total de la paginación y las filas que se ven.
+  const where = {
+    ...(filtro ? { status: filtro } : {}),
+    ...(corte ? { createdAt: { gte: corte } } : {}),
+  };
+
+  const [porEstado, clientes, totalFiltrado, estrategias] = await Promise.all([
+    // Los conteos de las tarjetas son SIEMPRE globales, nunca filtrados: si la
+    // de "Fallidas" mostrara cero por estar filtrando por "Listas", las
+    // tarjetas dejarían de servir para navegar, que es justo lo que hacen.
     prisma.strategy.groupBy({ by: ["status"], _count: { _all: true } }),
     prisma.client.count(),
+    prisma.strategy.count({ where }),
     prisma.strategy.findMany({
-      where: filtro ? { status: filtro } : {},
+      where,
       select: {
         id: true,
         title: true,
         status: true,
         failureReason: true,
-        updatedAt: true,
+        createdAt: true,
         client: { select: { name: true } },
       },
-      orderBy: { updatedAt: "desc" },
-      take: LIMITE,
+      orderBy: { createdAt: "desc" },
+      skip: (pagina - 1) * POR_PAGINA,
+      take: POR_PAGINA,
     }),
   ]);
 
@@ -68,7 +90,9 @@ export default async function AdminPage({
 
   const generando = conteo(StrategyStatus.GENERATING);
   const numFallidas = conteo(StrategyStatus.FAILED);
-  const total = porEstado.reduce((suma, p) => suma + p._count._all, 0);
+
+  const filtros: EstadoFiltros = { base: "/admin", estado: filtro, periodo, pagina };
+  const hayFiltro = filtro !== null || periodo !== "todo";
 
   return (
     <div className="space-y-8">
@@ -96,7 +120,7 @@ export default async function AdminPage({
           valor={generando}
           tono="info"
           estado={StrategyStatus.GENERATING}
-          filtroActivo={filtro}
+          filtros={filtros}
           // El pulso solo cuando hay algo moviéndose de verdad: una tarjeta que
           // late con un cero es ruido que enseña a ignorar la animación.
           latiendo={generando > 0}
@@ -107,7 +131,7 @@ export default async function AdminPage({
           valor={conteo(StrategyStatus.READY)}
           tono="ok"
           estado={StrategyStatus.READY}
-          filtroActivo={filtro}
+          filtros={filtros}
         />
 
         <Metrica
@@ -115,7 +139,7 @@ export default async function AdminPage({
           valor={conteo(StrategyStatus.APPROVED)}
           tono="ok"
           estado={StrategyStatus.APPROVED}
-          filtroActivo={filtro}
+          filtros={filtros}
         />
 
         <Metrica
@@ -125,7 +149,7 @@ export default async function AdminPage({
           // hay algo que mirar, si no deja de significar nada.
           tono={numFallidas > 0 ? "error" : "info"}
           estado={StrategyStatus.FAILED}
-          filtroActivo={filtro}
+          filtros={filtros}
         />
       </section>
 
@@ -134,24 +158,28 @@ export default async function AdminPage({
           <h2 className="text-lg font-medium">
             {filtro ? `Estrategias · ${ETIQUETA_ESTADO[filtro]}` : "Estrategias"}
             <span className="ml-2 text-sm font-normal opacity-70">
-              ({filtro ? conteo(filtro) : total})
+              ({totalFiltrado})
             </span>
           </h2>
 
-          {filtro && (
+          {hayFiltro && (
             <Link
-              href={enlaceAdmin(null)}
+              href={enlacePanel("/admin", {})}
               className="rounded-md border border-white/30 px-3 py-1.5 text-sm hover:bg-white/15"
             >
-              Limpiar filtro
+              Limpiar filtros
             </Link>
           )}
         </div>
 
+        <div className="mt-3">
+          <FiltroPeriodo filtros={filtros} />
+        </div>
+
         {estrategias.length === 0 ? (
-          <p className="mt-3 text-sm opacity-70">
-            {filtro
-              ? `No hay ninguna estrategia en estado "${ETIQUETA_ESTADO[filtro]}".`
+          <p className="mt-4 text-sm opacity-70">
+            {hayFiltro
+              ? "No hay ninguna estrategia que cumpla estos filtros."
               : "Todavía no se ha generado ninguna estrategia."}
           </p>
         ) : (
@@ -169,7 +197,7 @@ export default async function AdminPage({
                     <div className="flex items-center gap-3">
                       <EstadoBadge status={e.status} />
                       <time className="text-xs opacity-70">
-                        {e.updatedAt.toLocaleString("es-ES")}
+                        {e.createdAt.toLocaleString("es-ES")}
                       </time>
                     </div>
                   </div>
@@ -189,15 +217,22 @@ export default async function AdminPage({
                       </p>
                     </details>
                   )}
+
+                  {/* Solo donde la regla lo permite. La comprobación de verdad
+                      está en el servidor, dos veces más. */}
+                  {puedeEliminarse(e.status).permitida && (
+                    <div className="mt-3">
+                      <EliminarEstrategiaBoton
+                        estrategiaId={e.id}
+                        titulo={e.title}
+                      />
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
 
-            {(filtro ? conteo(filtro) : total) > LIMITE && (
-              <p className="mt-3 text-xs opacity-60">
-                Mostrando las {LIMITE} más recientes.
-              </p>
-            )}
+            <Paginacion filtros={filtros} total={totalFiltrado} />
           </>
         )}
       </section>
@@ -229,7 +264,7 @@ function Metrica({
   valor,
   tono,
   estado,
-  filtroActivo,
+  filtros,
   href,
   latiendo = false,
 }: {
@@ -238,16 +273,26 @@ function Metrica({
   tono: TonoEstado;
   /** Estado por el que filtra esta tarjeta. Ausente si navega a otro sitio. */
   estado?: StrategyStatus;
-  filtroActivo?: StrategyStatus | null;
+  filtros?: EstadoFiltros;
   /** Destino alternativo cuando la tarjeta no filtra. */
   href?: string;
   latiendo?: boolean;
 }) {
-  const activo = estado !== undefined && estado === filtroActivo;
+  const activo = estado !== undefined && estado === filtros?.estado;
 
   // Pulsar la tarjeta activa la apaga. Es lo que espera cualquiera que vea algo
   // marcado como seleccionado, y no quita el botón explícito de limpiar.
-  const destino = href ?? enlaceAdmin(activo ? null : (estado ?? null));
+  //
+  // El periodo se conserva y la página vuelve a la 1: cambiar de estado cambia
+  // cuántos registros hay, y quedarse en la página 4 daría una lista vacía que
+  // parece un fallo.
+  const destino =
+    href ??
+    enlacePanel("/admin", {
+      estado: activo ? null : (estado ?? null),
+      periodo: filtros?.periodo,
+      pagina: 1,
+    });
 
   return (
     <Link

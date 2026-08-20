@@ -2,12 +2,18 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  enlaceAdmin,
+  desdeCuando,
+  enlacePanel,
   parseEstadoFiltro,
+  parsePagina,
+  parsePeriodo,
   PARAM_ESTADO,
+  PARAM_PAGINA,
+  PARAM_PERIODO,
+  POR_PAGINA,
 } from "@/modules/strategy/filtros";
 
-// ── Lectura del parámetro ─────────────────────────────────────────────────
+// ── Estado ────────────────────────────────────────────────────────────────
 
 test("acepta un estado válido en mayúsculas", () => {
   assert.equal(parseEstadoFiltro("FAILED"), "FAILED");
@@ -34,25 +40,114 @@ test("sin parámetro no hay filtro", () => {
 });
 
 test("si el parámetro llega repetido se usa el primero", () => {
-  // `?estado=READY&estado=FAILED` llega como array.
   assert.equal(parseEstadoFiltro(["READY", "FAILED"]), "READY");
   assert.equal(parseEstadoFiltro([]), null);
 });
 
-// ── Construcción del enlace ───────────────────────────────────────────────
+// ── Periodo ───────────────────────────────────────────────────────────────
 
-test("sin filtro el enlace es el panel limpio, sin parámetro colgando", () => {
-  assert.equal(enlaceAdmin(null), "/admin");
+test("el periodo por defecto es todo el histórico", () => {
+  assert.equal(parsePeriodo(undefined), "todo");
+  assert.equal(parsePeriodo("cualquier-cosa"), "todo");
 });
 
-test("con filtro el enlace lo lleva en la query", () => {
-  assert.equal(enlaceAdmin("FAILED"), `/admin?${PARAM_ESTADO}=FAILED`);
+test("reconoce los dos periodos acotados", () => {
+  assert.equal(parsePeriodo("7d"), "7d");
+  assert.equal(parsePeriodo("30d"), "30d");
 });
 
-test("el enlace que produce se puede volver a leer", () => {
-  // Ida y vuelta: lo que se escribe en la URL es lo que se sabe leer.
-  for (const estado of ["DRAFT", "GENERATING", "READY", "APPROVED", "ARCHIVED", "FAILED"] as const) {
-    const url = new URL(enlaceAdmin(estado), "http://x");
-    assert.equal(parseEstadoFiltro(url.searchParams.get(PARAM_ESTADO) ?? undefined), estado);
-  }
+test("'todo' no acota, así que no produce fecha de corte", () => {
+  assert.equal(desdeCuando("todo"), null);
+});
+
+test("la última semana corta siete días atrás", () => {
+  const ahora = new Date("2026-08-20T12:00:00.000Z");
+  const corte = desdeCuando("7d", ahora);
+  assert.ok(corte);
+  assert.equal(corte.toISOString(), "2026-08-13T12:00:00.000Z");
+});
+
+test("el último mes corta treinta días atrás", () => {
+  const ahora = new Date("2026-08-20T12:00:00.000Z");
+  const corte = desdeCuando("30d", ahora);
+  assert.ok(corte);
+  assert.equal(corte.toISOString(), "2026-07-21T12:00:00.000Z");
+});
+
+test("el corte se calcula desde la fecha que se le pasa, no del reloj", () => {
+  // Inyectar `ahora` es lo que hace estos tests deterministas: con el reloj
+  // real, este fichero fallaría un día distinto cada vez.
+  const a = desdeCuando("7d", new Date("2020-01-08T00:00:00.000Z"));
+  assert.equal(a?.toISOString(), "2020-01-01T00:00:00.000Z");
+});
+
+// ── Página ────────────────────────────────────────────────────────────────
+
+test("la página por defecto es la primera", () => {
+  assert.equal(parsePagina(undefined), 1);
+  assert.equal(parsePagina(""), 1);
+});
+
+test("una página inválida o menor que uno cae en la primera", () => {
+  // `skip` negativo hace que Prisma lance; un parámetro manipulado no debe
+  // tumbar el panel.
+  assert.equal(parsePagina("0"), 1);
+  assert.equal(parsePagina("-3"), 1);
+  assert.equal(parsePagina("abc"), 1);
+  assert.equal(parsePagina("1.5"), 1);
+});
+
+test("una página válida se respeta", () => {
+  assert.equal(parsePagina("2"), 2);
+  assert.equal(parsePagina("17"), 17);
+});
+
+// ── Enlaces ───────────────────────────────────────────────────────────────
+
+test("sin filtros el enlace queda limpio, sin parámetros colgando", () => {
+  assert.equal(enlacePanel("/admin", {}), "/admin");
+  assert.equal(
+    enlacePanel("/admin", { estado: null, periodo: "todo", pagina: 1 }),
+    "/admin",
+  );
+});
+
+test("cada filtro aparece solo si aporta algo", () => {
+  assert.equal(
+    enlacePanel("/admin", { estado: "FAILED" }),
+    `/admin?${PARAM_ESTADO}=FAILED`,
+  );
+  assert.equal(
+    enlacePanel("/admin", { periodo: "7d" }),
+    `/admin?${PARAM_PERIODO}=7d`,
+  );
+  assert.equal(
+    enlacePanel("/admin", { pagina: 3 }),
+    `/admin?${PARAM_PAGINA}=3`,
+  );
+});
+
+test("cambiar un filtro conserva los demás", () => {
+  // Si cambiar el periodo perdiera el estado, filtrar sería un juego de
+  // paciencia: cada clic desharía el anterior.
+  const url = enlacePanel("/admin", {
+    estado: "FAILED",
+    periodo: "30d",
+    pagina: 2,
+  });
+  const params = new URL(url, "http://x").searchParams;
+  assert.equal(params.get(PARAM_ESTADO), "FAILED");
+  assert.equal(params.get(PARAM_PERIODO), "30d");
+  assert.equal(params.get(PARAM_PAGINA), "2");
+});
+
+test("sirve para cualquier panel, no solo el de administración", () => {
+  assert.equal(
+    enlacePanel("/colaborador", { estado: "READY" }),
+    `/colaborador?${PARAM_ESTADO}=READY`,
+  );
+});
+
+test("el tamaño de página es el que pidió el requisito", () => {
+  assert.equal(POR_PAGINA, 15);
 });

@@ -36,6 +36,42 @@ export function puedeAprobarse(status: StrategyStatus): ResultadoTransicion {
 }
 
 /**
+ * Si una estrategia se puede borrar de la base de datos. Es irreversible.
+ *
+ * `APPROVED` NUNCA. Es lo que el cliente tiene delante ahora mismo y lo que
+ * sostiene la memoria histórica de `BrainService` a través de su
+ * `StrategyOutcome` —que se borraría en cascada—. Perderla no es perder un
+ * registro, es perder la referencia de lo que se entregó y el aprendizaje que
+ * alimenta las siguientes generaciones. Para retirarla del cliente está
+ * `desaprobar`, que no destruye nada.
+ *
+ * `GENERATING` tampoco: hay una generación viva escribiendo sobre esa fila.
+ * Borrarla deja tokens en vuelo apuntando a algo que ya no existe.
+ *
+ * El resto son descartables: un borrador sin contenido, una generación fallida,
+ * una lista que se decidió no usar o una archivada.
+ */
+export function puedeEliminarse(status: StrategyStatus): ResultadoTransicion {
+  if (status === "APPROVED") {
+    return {
+      permitida: false,
+      motivo:
+        "Una estrategia aprobada no se puede eliminar: es la que el cliente tiene delante. Retira antes la aprobación si quieres dejar de publicarla.",
+    };
+  }
+
+  if (status === "GENERATING") {
+    return {
+      permitida: false,
+      motivo:
+        "Se está generando ahora mismo. Espera a que termine antes de eliminarla.",
+    };
+  }
+
+  return { permitida: true };
+}
+
+/**
  * `APPROVED → READY`. Deshace la aprobación.
  *
  * Existe porque aprobar es lo que publica: desde que `ESTADOS_VISIBLES_PARA_CLIENTE`
