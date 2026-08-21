@@ -90,7 +90,7 @@ export default async function TableroPage({
 
       {puedeGestionar ? (
         <p className="text-sm opacity-70">
-          Arrastra las tarjetas para ir marcando por dónde vais. Puedes añadir
+          Arrastra las tarjetas para ir marcando por dónde van. Puedes añadir
           las tuyas, editarlas y asignar responsables.
         </p>
       ) : (
