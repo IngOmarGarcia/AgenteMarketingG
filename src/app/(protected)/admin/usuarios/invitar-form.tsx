@@ -73,6 +73,21 @@ export function InvitarUsuarioForm({
                 </option>
               ))}
             </select>
+            <label className="mt-2 flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="puedeInvitar"
+                className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
+              />
+              <span>
+                Puede dar de alta a compañeros de su empresa
+                <span className="block text-xs opacity-60">
+                  Marca solo al contacto principal. Los que él invite no lo
+                  heredan.
+                </span>
+              </span>
+            </label>
+
             {empresas.length === 0 && (
               <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
                 No hay empresas dadas de alta todavía. Crea una antes de invitar

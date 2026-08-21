@@ -3,9 +3,12 @@ import { notFound } from "next/navigation";
 import { StrategyStatus } from "@prisma/client";
 
 import { verifySession } from "@/lib/auth/dal";
-import { puedeMoverTareas, puedeVerEstrategia } from "@/lib/auth/policy";
+import { puedeGestionarTablero, puedeVerEstrategia } from "@/lib/auth/policy";
 import { prisma } from "@/lib/prisma";
-import { cargarTablero } from "@/modules/tablero/tablero.service";
+import {
+  cargarTablero,
+  miembrosDeEmpresa,
+} from "@/modules/tablero/tablero.service";
 import { claseTono } from "@/components/estado-estrategia";
 import { TableroKanban } from "@/components/tablero/tablero-kanban";
 
@@ -40,7 +43,7 @@ export default async function TableroPage({
   // esta estrategia existe.
   if (!puedeVerEstrategia(session, estrategia)) notFound();
 
-  const puedeMover = puedeMoverTareas(session, estrategia);
+  const puedeGestionar = puedeGestionarTablero(session, estrategia);
 
   const cabecera = (
     <header>
@@ -73,15 +76,22 @@ export default async function TableroPage({
 
   // Siembra perezosa: la primera visita crea las tarjetas desde el contenido
   // generado. Ver `cargarTablero`.
-  const tareas = await cargarTablero(estrategia.id);
+  // Los miembros alimentan el selector de responsable. Se cargan siempre, no
+  // solo con permiso: el equipo tiene que poder LEER a quién está asignada cada
+  // tarjeta aunque no pueda cambiarlo.
+  const [tareas, miembros] = await Promise.all([
+    cargarTablero(estrategia.id),
+    miembrosDeEmpresa(estrategia.clientId),
+  ]);
 
   return (
     <div className="space-y-6">
       {cabecera}
 
-      {puedeMover ? (
+      {puedeGestionar ? (
         <p className="text-sm opacity-70">
-          Arrastra las tarjetas para ir marcando por dónde vais.
+          Arrastra las tarjetas para ir marcando por dónde vais. Puedes añadir
+          las tuyas, editarlas y asignar responsables.
         </p>
       ) : (
         <p className={claseTono("info", "rounded-lg px-4 py-3 text-sm")}>
@@ -100,7 +110,12 @@ export default async function TableroPage({
           </p>
         </div>
       ) : (
-        <TableroKanban tareasIniciales={tareas} puedeMover={puedeMover} />
+        <TableroKanban
+          strategyId={estrategia.id}
+          tareasIniciales={tareas}
+          miembros={miembros}
+          puedeGestionar={puedeGestionar}
+        />
       )}
     </div>
   );

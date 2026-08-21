@@ -30,6 +30,8 @@ export interface Session {
   readonly role: Role;
   /** Solo para CLIENTE. `null` en el resto de roles. */
   readonly clientId: string | null;
+  /** Solo significa algo en un CLIENTE. Ver `puedeInvitarMiembros`. */
+  readonly puedeInvitar: boolean;
 }
 
 /**
@@ -64,7 +66,7 @@ const getProfileSnapshot = cache(
   async (userId: string): Promise<ProfileSnapshot | null> => {
     const row = await prisma.profile.findUnique({
       where: { id: userId },
-      select: { role: true, clientId: true, isActive: true },
+      select: { role: true, clientId: true, isActive: true, puedeInvitar: true },
     });
     return row;
   },
@@ -93,7 +95,13 @@ async function applyDecision(
 ): Promise<Session> {
   switch (decision.type) {
     case "allow":
-      return { userId, email, role: decision.role, clientId: decision.clientId };
+      return {
+        userId,
+        email,
+        role: decision.role,
+        clientId: decision.clientId,
+        puedeInvitar: decision.puedeInvitar,
+      };
     case "redirect":
       redirect(decision.to);
     case "signout":
@@ -144,6 +152,7 @@ export const getOptionalSession = cache(async (): Promise<Session | null> => {
     email: user.email,
     role: profile.role,
     clientId: profile.clientId,
+    puedeInvitar: profile.puedeInvitar,
   };
 });
 

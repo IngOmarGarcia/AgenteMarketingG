@@ -10,27 +10,39 @@ import {
 } from "@dnd-kit/core";
 import { useState, useTransition } from "react";
 
-import { moverTareaAction } from "@/modules/tablero/actions";
-import type { TareaFila } from "@/modules/tablero/tablero.service";
+import {
+  asignarTareaAction,
+  crearTareaAction,
+  editarTareaAction,
+  eliminarTareaAction,
+  moverTareaAction,
+} from "@/modules/tablero/actions";
+import type { MiembroFila, TareaFila } from "@/modules/tablero/tablero.service";
 import { COLUMNAS, parseEstadoTarea } from "@/modules/tablero/tareas";
 import { Columna } from "@/components/tablero/columna";
 
 /**
  * Tablero de ejecución.
  *
- * Escritura optimista: la tarjeta se mueve al instante y la red va detrás. Si
- * el servidor rechaza, vuelve a su columna y aparece el motivo.
+ * **Mover** es optimista: la tarjeta cambia de columna al instante y la red va
+ * detrás, porque es el gesto que debe sentirse inmediato. Si el servidor
+ * rechaza, vuelve a su sitio y aparece el motivo.
  *
- * Sin debounce ni encadenado por tarjeta, a diferencia del patrón del que
- * proviene: mover no se repite como escribir, y una tarea solo puede estar en
- * una columna, así que la última petición es la que vale.
+ * **Crear, editar, asignar y borrar** esperan la respuesta y funden la fila que
+ * devuelve el servidor. No usan `router.refresh()` a propósito: recargar el
+ * árbol entero por cambiar un título haría parpadear el tablero completo, y el
+ * servidor ya devuelve exactamente la fila que cambió.
  */
 export function TableroKanban({
+  strategyId,
   tareasIniciales,
-  puedeMover,
+  miembros,
+  puedeGestionar,
 }: {
+  strategyId: string;
   tareasIniciales: TareaFila[];
-  puedeMover: boolean;
+  miembros: MiembroFila[];
+  puedeGestionar: boolean;
 }) {
   const [tareas, setTareas] = useState(tareasIniciales);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +54,11 @@ export function TableroKanban({
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor),
   );
+
+  /** Sustituye una fila por la que devolvió el servidor. */
+  function fundir(fila: TareaFila) {
+    setTareas((prev) => prev.map((t) => (t.id === fila.id ? fila : t)));
+  }
 
   function alSoltar({ active, over }: DragEndEvent) {
     if (!over) return;
@@ -73,6 +90,42 @@ export function TableroKanban({
     });
   }
 
+  function crear(titulo: string, detalle: string) {
+    setError(null);
+    startTransition(async () => {
+      const r = await crearTareaAction(strategyId, titulo, detalle);
+      if (!r.ok) return setError(r.mensaje);
+      setTareas((prev) => [...prev, r.tarea]);
+    });
+  }
+
+  function editar(id: string, titulo: string, detalle: string) {
+    setError(null);
+    startTransition(async () => {
+      const r = await editarTareaAction(id, titulo, detalle);
+      if (!r.ok) return setError(r.mensaje);
+      fundir(r.tarea);
+    });
+  }
+
+  function asignar(id: string, profileId: string | null) {
+    setError(null);
+    startTransition(async () => {
+      const r = await asignarTareaAction(id, profileId);
+      if (!r.ok) return setError(r.mensaje);
+      fundir(r.tarea);
+    });
+  }
+
+  function eliminar(id: string) {
+    setError(null);
+    startTransition(async () => {
+      const r = await eliminarTareaAction(id);
+      if (!r.ok) return setError(r.mensaje);
+      setTareas((prev) => prev.filter((t) => t.id !== id));
+    });
+  }
+
   return (
     <div className="space-y-4">
       {error && (
@@ -95,7 +148,12 @@ export function TableroKanban({
               tareas={tareas
                 .filter((t) => t.estado === c.estado)
                 .sort((a, b) => a.orden - b.orden)}
-              puedeMover={puedeMover}
+              miembros={miembros}
+              puedeGestionar={puedeGestionar}
+              onCrear={crear}
+              onEditar={editar}
+              onAsignar={asignar}
+              onEliminar={eliminar}
             />
           ))}
         </div>

@@ -7,8 +7,10 @@ import {
   dashboardPathFor,
   decideAccess,
   isClienteSinEmpresa,
+  esMiembroDe,
   puedeGenerarPara,
-  puedeMoverTareas,
+  puedeGestionarTablero,
+  puedeInvitarMiembros,
   puedeVerEstrategia,
   type ProfileSnapshot,
 } from "@/lib/auth/policy";
@@ -16,7 +18,7 @@ import {
 const ROLES: Role[] = ["ADMIN", "COLABORADOR", "CLIENTE"];
 
 function perfil(over: Partial<ProfileSnapshot> = {}): ProfileSnapshot {
-  return { role: "ADMIN", clientId: null, isActive: true, ...over };
+  return { role: "ADMIN", clientId: null, isActive: true, puedeInvitar: false, ...over };
 }
 
 test("cada rol entra en su propia ruta", () => {
@@ -170,8 +172,8 @@ test("un CLIENTE sin empresa no ve ninguna estrategia", () => {
 
 test("solo el CLIENTE de la empresa mueve las tarjetas", () => {
   const p = perfil({ role: "CLIENTE", clientId: "cli_1" });
-  assert.equal(puedeMoverTareas(p, { clientId: "cli_1" }), true);
-  assert.equal(puedeMoverTareas(p, { clientId: "cli_2" }), false);
+  assert.equal(puedeGestionarTablero(p, { clientId: "cli_1" }), true);
+  assert.equal(puedeGestionarTablero(p, { clientId: "cli_2" }), false);
 });
 
 test("el equipo VE el tablero pero no lo mueve", () => {
@@ -180,7 +182,7 @@ test("el equipo VE el tablero pero no lo mueve", () => {
   // ser un hecho y pasaría a ser una suposición nuestra.
   for (const role of ["ADMIN", "COLABORADOR"] as const) {
     assert.equal(
-      puedeMoverTareas(perfil({ role }), { clientId: "cli_1" }),
+      puedeGestionarTablero(perfil({ role }), { clientId: "cli_1" }),
       false,
       `${role} no debería poder mover tarjetas`,
     );
@@ -189,5 +191,53 @@ test("el equipo VE el tablero pero no lo mueve", () => {
 
 test("un CLIENTE sin empresa no mueve nada", () => {
   const p = perfil({ role: "CLIENTE", clientId: null });
-  assert.equal(puedeMoverTareas(p, { clientId: "cli_1" }), false);
+  assert.equal(puedeGestionarTablero(p, { clientId: "cli_1" }), false);
+});
+
+// ── Alta de miembros por el propio cliente ────────────────────────────────
+
+test("solo un CLIENTE marcado puede invitar a su equipo", () => {
+  assert.equal(
+    puedeInvitarMiembros(perfil({ role: "CLIENTE", clientId: "c1", puedeInvitar: true })),
+    true,
+  );
+  assert.equal(
+    puedeInvitarMiembros(perfil({ role: "CLIENTE", clientId: "c1", puedeInvitar: false })),
+    false,
+  );
+});
+
+test("el equipo de la agencia NO invita por esta vía", () => {
+  // ADMIN invita desde /admin/usuarios, que es otra acción y sí puede elegir
+  // rol y empresa. Marcarle el booleano no debe abrirle esta puerta.
+  for (const role of ["ADMIN", "COLABORADOR"] as const) {
+    assert.equal(
+      puedeInvitarMiembros(perfil({ role, puedeInvitar: true })),
+      false,
+      `${role} no debería invitar como si fuera un cliente`,
+    );
+  }
+});
+
+test("un CLIENTE sin empresa no invita aunque esté marcado", () => {
+  // No habría a qué empresa atar al invitado.
+  assert.equal(
+    puedeInvitarMiembros(perfil({ role: "CLIENTE", clientId: null, puedeInvitar: true })),
+    false,
+  );
+});
+
+test("el invitado no hereda el permiso: nace en false", () => {
+  // Lo garantiza el default del schema y la acción, que lo fija en duro. Aquí
+  // se documenta que un perfil sin marcar no puede propagar la delegación.
+  assert.equal(
+    puedeInvitarMiembros(perfil({ role: "CLIENTE", clientId: "c1" })),
+    false,
+  );
+});
+
+test("esMiembroDe distingue la empresa propia de la ajena", () => {
+  assert.equal(esMiembroDe({ clientId: "c1" }, "c1"), true);
+  assert.equal(esMiembroDe({ clientId: "c2" }, "c1"), false);
+  assert.equal(esMiembroDe({ clientId: null }, "c1"), false);
 });

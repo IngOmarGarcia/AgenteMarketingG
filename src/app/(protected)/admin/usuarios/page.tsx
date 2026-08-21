@@ -15,6 +15,7 @@ export default async function UsuariosPage() {
         fullName: true,
         role: true,
         isActive: true,
+        puedeInvitar: true,
         createdAt: true,
         client: { select: { id: true, name: true } },
       },
@@ -60,6 +61,7 @@ export default async function UsuariosPage() {
                   fullName: p.fullName,
                   role: p.role,
                   isActive: p.isActive,
+                  puedeInvitar: p.puedeInvitar,
                   empresaNombre: p.client?.name ?? null,
                 }}
                 empresas={empresas}

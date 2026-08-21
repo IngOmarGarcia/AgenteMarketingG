@@ -31,12 +31,12 @@ tras la misma regla.
 
 **Files:** `prisma/schema.prisma`
 
-- [ ] **Paso 1** — `Profile` gana `puedeInvitar Boolean @default(false)` y la
+- [x] **Paso 1** — `Profile` gana `puedeInvitar Boolean @default(false)` y la
   relación inversa `tareasAsignadas StrategyTask[]`.
-- [ ] **Paso 2** — `TareaOrigen` gana `MANUAL`.
-- [ ] **Paso 3** — `StrategyTask` gana `asignadoAId` y la relación con
+- [x] **Paso 2** — `TareaOrigen` gana `MANUAL`.
+- [x] **Paso 3** — `StrategyTask` gana `asignadoAId` y la relación con
   `onDelete: SetNull`, más `@@index([asignadoAId])`.
-- [ ] **Paso 4** — `npm run db:generate && npm run db:push && npm run db:constraints`.
+- [x] **Paso 4** — `npm run db:generate && npm run db:push && npm run db:constraints`.
 
 ---
 
@@ -51,7 +51,7 @@ tras la misma regla.
 - `puedeMoverTareas` → renombrada a `puedeGestionarTablero`
 - `esMiembroDe(profile: { clientId: string | null }, clientId: string): boolean`
 
-- [ ] **Paso 1: Tests que fallan**
+- [x] **Paso 1: Tests que fallan**
 
 ```ts
 test("solo un CLIENTE marcado puede invitar", () => {
@@ -78,10 +78,10 @@ test("esMiembroDe distingue la empresa propia de la ajena", () => {
 });
 ```
 
-- [ ] **Paso 2** — `npm test` → falla.
-- [ ] **Paso 3** — Implementar. `puedeInvitarMiembros` exige las tres cosas:
+- [x] **Paso 2** — `npm test` → falla.
+- [x] **Paso 3** — Implementar. `puedeInvitarMiembros` exige las tres cosas:
   rol CLIENTE, `clientId` presente y `puedeInvitar`.
-- [ ] **Paso 4** — `npm test` → pasa.
+- [x] **Paso 4** — `npm test` → pasa.
 
 ---
 
@@ -89,10 +89,10 @@ test("esMiembroDe distingue la empresa propia de la ajena", () => {
 
 **Files:** `src/lib/auth/dal.ts`
 
-- [ ] **Paso 1** — `getProfileSnapshot` añade `puedeInvitar: true` al `select`.
-- [ ] **Paso 2** — `Session` gana el campo; `applyDecision` y
+- [x] **Paso 1** — `getProfileSnapshot` añade `puedeInvitar: true` al `select`.
+- [x] **Paso 2** — `Session` gana el campo; `applyDecision` y
   `getOptionalSession` lo propagan.
-- [ ] **Paso 3** — `npx tsc --noEmit` limpio.
+- [x] **Paso 3** — `npx tsc --noEmit` limpio.
 
 ---
 
@@ -104,7 +104,7 @@ test("esMiembroDe distingue la empresa propia de la ajena", () => {
 - `src/modules/usuarios/actions.ts` — `invitarMiembroAction`, `alternarPuedeInvitarAction`
 - Test: `src/modules/usuarios/usuarios.test.ts`
 
-- [ ] **Paso 1: Test del schema**
+- [x] **Paso 1: Test del schema**
 
 ```ts
 test("el schema del miembro no admite rol ni empresa", () => {
@@ -119,7 +119,7 @@ test("el schema del miembro no admite rol ni empresa", () => {
 });
 ```
 
-- [ ] **Paso 2** — Implementar el schema (solo `email` y `fullName`) y la acción:
+- [x] **Paso 2** — Implementar el schema (solo `email` y `fullName`) y la acción:
 
 ```ts
 const session = await requireRole("CLIENTE");
@@ -133,9 +133,9 @@ await servicio.invitar(
 );
 ```
 
-- [ ] **Paso 3** — `alternarPuedeInvitarAction` para ADMIN, con la misma guarda
+- [x] **Paso 3** — `alternarPuedeInvitarAction` para ADMIN, con la misma guarda
   de "no sobre ti mismo" que las otras acciones de usuarios.
-- [ ] **Paso 4** — `npm test` → pasa.
+- [x] **Paso 4** — `npm test` → pasa.
 
 ---
 
@@ -147,10 +147,10 @@ await servicio.invitar(
 - `src/components/nav-principal.tsx` — enlace "Equipo" para CLIENTE
 - `src/app/(protected)/admin/usuarios/*` — casilla y conmutador de `puedeInvitar`
 
-- [ ] **Paso 1** — Página: lista los perfiles con el `clientId` de la sesión.
-- [ ] **Paso 2** — Formulario solo si `puedeInvitarMiembros(session)`.
-- [ ] **Paso 3** — Enlace en la navegación.
-- [ ] **Paso 4** — En `/admin/usuarios`, casilla al invitar y conmutador por fila.
+- [x] **Paso 1** — Página: lista los perfiles con el `clientId` de la sesión.
+- [x] **Paso 2** — Formulario solo si `puedeInvitarMiembros(session)`.
+- [x] **Paso 3** — Enlace en la navegación.
+- [x] **Paso 4** — En `/admin/usuarios`, casilla al invitar y conmutador por fila.
 
 ---
 
@@ -166,7 +166,7 @@ await servicio.invitar(
 `asignarTareaAction`. Todas devuelven la fila afectada para que el cliente la
 funda sin recargar.
 
-- [ ] **Paso 1: Tests del título**
+- [x] **Paso 1: Tests del título**
 
 ```ts
 test("un título vacío o de solo espacios se rechaza", () => {
@@ -176,17 +176,17 @@ test("un título vacío o de solo espacios se rechaza", () => {
 });
 ```
 
-- [ ] **Paso 2** — Implementar servicio y acciones. Cada una:
+- [x] **Paso 2** — Implementar servicio y acciones. Cada una:
   1. `verifySession()`
   2. cargar la tarea con su estrategia
   3. `puedeGestionarTablero(session, tarea.strategy)`
   4. escribir y devolver la fila
 
-- [ ] **Paso 3** — `asignarTareaAction` valida además que el asignado sea de la
+- [x] **Paso 3** — `asignarTareaAction` valida además que el asignado sea de la
   empresa con `esMiembroDe`. Sin eso, cambiar el valor de un `<option>` asignaría
   tareas a otra empresa y filtraría su nombre.
 
-- [ ] **Paso 4** — `npm test` y `npx tsc --noEmit`.
+- [x] **Paso 4** — `npm test` y `npx tsc --noEmit`.
 
 ---
 
@@ -199,19 +199,19 @@ test("un título vacío o de solo espacios se rechaza", () => {
 - `src/components/tablero/nueva-tarjeta.tsx`
 - `src/app/(protected)/estrategias/[id]/tablero/page.tsx` — cargar los miembros
 
-- [ ] **Paso 1** — La página carga los perfiles de la empresa y los pasa al tablero.
-- [ ] **Paso 2** — La tarjeta se despliega para editar título, detalle y
+- [x] **Paso 1** — La página carga los perfiles de la empresa y los pasa al tablero.
+- [x] **Paso 2** — La tarjeta se despliega para editar título, detalle y
   responsable, y borrar. Solo con permiso.
-- [ ] **Paso 3** — Formulario de alta al pie de cada columna.
-- [ ] **Paso 4** — El estado local se funde con lo que devuelve cada acción.
-- [ ] **Paso 5** — `npm test && npx tsc --noEmit && npx eslint src scripts && npx next build`.
+- [x] **Paso 3** — Formulario de alta al pie de cada columna.
+- [x] **Paso 4** — El estado local se funde con lo que devuelve cada acción.
+- [x] **Paso 5** — `npm test && npx tsc --noEmit && npx eslint src scripts && npx next build`.
 
 ---
 
 ## Task 8: Verificación contra la base de datos
 
-- [ ] **Paso 1** — Marcar un CLIENTE como principal, invitar a un compañero y
+- [x] **Paso 1** — Marcar un CLIENTE como principal, invitar a un compañero y
   comprobar rol, `clientId` y `puedeInvitar` del nuevo.
-- [ ] **Paso 2** — Crear, editar, asignar y borrar una tarjeta.
-- [ ] **Paso 3** — Intentar asignar a un perfil de otra empresa: debe rechazarse.
+- [x] **Paso 2** — Crear, editar, asignar y borrar una tarjeta.
+- [x] **Paso 3** — Intentar asignar a un perfil de otra empresa: debe rechazarse.
 - [ ] **Paso 4** — Recorrido manual en navegador.

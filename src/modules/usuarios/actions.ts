@@ -6,10 +6,12 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/dal";
+import { puedeInvitarMiembros } from "@/lib/auth/policy";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseAdminClient } from "@/lib/auth/supabase-admin";
 import {
   CambiarRolSchema,
+  InvitarMiembroSchema,
   InvitarUsuarioSchema,
 } from "@/modules/usuarios/schemas";
 import {
@@ -63,6 +65,7 @@ export async function invitarUsuarioAction(
     fullName: String(formData.get("fullName") ?? "").trim() || undefined,
     role: formData.get("role"),
     clientId: clientIdCrudo === "" ? null : clientIdCrudo,
+    puedeInvitar: formData.get("puedeInvitar") === "on",
   });
 
   if (!parsed.success) {
@@ -147,5 +150,122 @@ export async function alternarActivoAction(
   return {
     ok: true,
     mensaje: actual.isActive ? "Usuario desactivado." : "Usuario reactivado.",
+  };
+}
+
+/**
+ * Alta de un miembro por parte del propio cliente.
+ *
+ * Es la única acción del sistema en la que un CLIENTE crea usuarios, así que la
+ * superficie de entrada se reduce al mínimo: `email` y `fullName`. Y NADA MÁS.
+ *
+ * `role` y `clientId` NO se leen del formulario. Salen de la sesión, y por eso
+ * no hay ninguna ruta por la que quien invita pueda influir en ellos: ni
+ * ascender a nadie a ADMIN, ni colgar un usuario de otra empresa. Lo mismo con
+ * `puedeInvitar`, fijado a false en duro para que la delegación no se propague
+ * sola por toda la empresa.
+ */
+export async function invitarMiembroAction(
+  _prev: AccionResultado | null,
+  formData: FormData,
+): Promise<AccionResultado> {
+  const session = await requireRole("CLIENTE");
+
+  if (!puedeInvitarMiembros(session) || session.clientId === null) {
+    return {
+      ok: false,
+      mensaje:
+        "No tienes permiso para dar de alta a compañeros. Pídeselo a quien gestione la cuenta de tu empresa.",
+    };
+  }
+
+  const parsed = InvitarMiembroSchema.safeParse({
+    email: String(formData.get("email") ?? "").trim(),
+    fullName: String(formData.get("fullName") ?? "").trim() || undefined,
+  });
+
+  if (!parsed.success) {
+    return { ok: false, mensaje: parsed.error.issues[0].message };
+  }
+
+  const cabeceras = await headers();
+  const host = cabeceras.get("x-forwarded-host") ?? cabeceras.get("host");
+  const protocolo = cabeceras.get("x-forwarded-proto") ?? "http";
+  const redirectTo = `${protocolo}://${host}/auth/callback?type=invite`;
+
+  const servicio = new UsuariosService(prisma, crearAuthAdminPort());
+  const resultado = await servicio.invitar(
+    {
+      ...parsed.data,
+      fullName: parsed.data.fullName,
+      role: "CLIENTE",
+      clientId: session.clientId,
+      puedeInvitar: false,
+    },
+    { redirectTo },
+  );
+
+  if (!resultado.ok) {
+    console.error("[invitarMiembroAction]", resultado.error.toJSON());
+    return { ok: false, mensaje: resultado.error.message };
+  }
+
+  revalidatePath("/cliente/equipo");
+  return {
+    ok: true,
+    mensaje: `Invitación enviada a ${resultado.data.email}. Recibirá un correo para entrar.`,
+  };
+}
+
+/**
+ * Concede o retira el permiso de dar de alta compañeros.
+ *
+ * Solo ADMIN. Existe porque si no, los clientes que ya estaban dados de alta se
+ * quedarían sin forma de conseguirlo: la casilla del alta solo sirve para los
+ * nuevos.
+ */
+export async function alternarPuedeInvitarAction(
+  _prev: AccionResultado | null,
+  formData: FormData,
+): Promise<AccionResultado> {
+  await requireRole("ADMIN");
+
+  const profileId = String(formData.get("profileId") ?? "");
+  if (!profileId) return { ok: false, mensaje: "Falta el identificador." };
+
+  const perfil = await prisma.profile.findUnique({
+    where: { id: profileId },
+    select: { role: true, clientId: true, puedeInvitar: true },
+  });
+  if (!perfil) return { ok: false, mensaje: "El usuario no existe." };
+
+  // En un ADMIN o un COLABORADOR el booleano no significa nada —
+  // `puedeInvitarMiembros` los rechaza igualmente—, así que dejarlo activar
+  // sería prometer algo que no va a ocurrir.
+  if (perfil.role !== "CLIENTE") {
+    return {
+      ok: false,
+      mensaje: "Este permiso solo aplica a usuarios con rol CLIENTE.",
+    };
+  }
+
+  if (perfil.clientId === null) {
+    return {
+      ok: false,
+      mensaje: "Vincula al usuario con una empresa antes de darle este permiso.",
+    };
+  }
+
+  await prisma.profile.update({
+    where: { id: profileId },
+    data: { puedeInvitar: !perfil.puedeInvitar },
+  });
+
+  revalidatePath("/admin/usuarios");
+  return {
+    ok: true,
+    mensaje: perfil.puedeInvitar
+      ? "Ya no puede dar de alta compañeros."
+      : "Ahora puede dar de alta compañeros de su empresa.",
   };
 }

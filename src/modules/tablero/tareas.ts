@@ -110,3 +110,18 @@ const ESTADOS_VALIDOS = new Set<string>(Object.values(TareaEstado));
 export function parseEstadoTarea(valor: string): TareaEstado | null {
   return ESTADOS_VALIDOS.has(valor) ? (valor as TareaEstado) : null;
 }
+
+/**
+ * Si un título sirve para una tarjeta.
+ *
+ * Una tarjeta sin texto es basura visible en el tablero del cliente, y el
+ * navegador no lo impide: `required` en el input se salta desactivando
+ * JavaScript o mandando el POST a mano.
+ */
+export function tituloValido(titulo: string): boolean {
+  return titulo.trim().length > 0;
+}
+
+/** Límite de longitud, para que una tarjeta no rompa la columna. */
+export const MAX_TITULO = 200;
+export const MAX_DETALLE = 2000;

@@ -7,6 +7,7 @@ import {
   derivarTareas,
   parseEstadoTarea,
   siguienteOrden,
+  tituloValido,
 } from "@/modules/tablero/tareas";
 
 const SALIDA: StrategyOutput = {
@@ -136,4 +137,19 @@ test("un estado de columna inválido no se acepta", () => {
   assert.equal(parseEstadoTarea("HECHA"), "HECHA");
   assert.equal(parseEstadoTarea("INVENTADO"), null);
   assert.equal(parseEstadoTarea(""), null);
+});
+
+// ── Título de una tarjeta creada a mano ───────────────────────────────────
+
+test("un título vacío o de solo espacios se rechaza", () => {
+  // `required` en el input no vale como defensa: se salta desactivando
+  // JavaScript o mandando el POST directamente.
+  assert.equal(tituloValido(""), false);
+  assert.equal(tituloValido("   "), false);
+  assert.equal(tituloValido("\n\t "), false);
+});
+
+test("un título con contenido se acepta", () => {
+  assert.equal(tituloValido("Llamar al proveedor"), true);
+  assert.equal(tituloValido("  con espacios alrededor  "), true);
 });

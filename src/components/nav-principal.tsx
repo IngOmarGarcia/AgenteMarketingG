@@ -17,7 +17,10 @@ const ENLACES: Readonly<Record<Role, ReadonlyArray<{ href: string; label: string
     { href: "/colaborador", label: "Panel" },
     { href: "/empresas", label: "Empresas" },
   ],
-  CLIENTE: [{ href: "/cliente", label: "Mis estrategias" }],
+  CLIENTE: [
+    { href: "/cliente", label: "Mis estrategias" },
+    { href: "/cliente/equipo", label: "Equipo" },
+  ],
 };
 
 const ETIQUETA_ROL: Readonly<Record<Role, string>> = {

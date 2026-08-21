@@ -4,7 +4,12 @@ import type { TareaEstado } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { StrategyOutputSchema } from "@/modules/ai-core/schemas/strategy.schema";
-import { derivarTareas, siguienteOrden } from "@/modules/tablero/tareas";
+import {
+  derivarTareas,
+  siguienteOrden,
+  MAX_DETALLE,
+  MAX_TITULO,
+} from "@/modules/tablero/tareas";
 
 /**
  * Persistencia del tablero.
@@ -20,6 +25,13 @@ export interface TareaFila {
   readonly estado: TareaEstado;
   readonly origen: string;
   readonly orden: number;
+  readonly asignadoAId: string | null;
+}
+
+/** Miembro de la empresa, para el selector de responsable. */
+export interface MiembroFila {
+  readonly id: string;
+  readonly nombre: string;
 }
 
 const SELECT = {
@@ -29,7 +41,13 @@ const SELECT = {
   estado: true,
   origen: true,
   orden: true,
+  asignadoAId: true,
 } as const;
+
+/** Recorta a lo que cabe en la columna sin romper la maquetación. */
+function recortar(valor: string, max: number): string {
+  return valor.trim().slice(0, max);
+}
 
 function leer(strategyId: string): Promise<TareaFila[]> {
   return prisma.strategyTask.findMany({
@@ -99,4 +117,79 @@ export async function moverTarea(
     where: { id: tareaId },
     data: { estado: destino, orden: siguienteOrden(hermanas, destino) },
   });
+}
+
+/**
+ * Miembros de una empresa, para el selector de responsable.
+ *
+ * Solo perfiles activos: ofrecer a alguien dado de baja invita a asignarle
+ * trabajo que nadie va a recoger.
+ */
+export async function miembrosDeEmpresa(
+  clientId: string,
+): Promise<MiembroFila[]> {
+  const filas = await prisma.profile.findMany({
+    where: { clientId, isActive: true },
+    select: { id: true, fullName: true, email: true },
+    orderBy: [{ fullName: "asc" }, { email: "asc" }],
+  });
+
+  return filas.map((f) => ({ id: f.id, nombre: f.fullName ?? f.email }));
+}
+
+/** Crea una tarjeta a mano, al final de la columna "Por hacer". */
+export async function crearTarea(
+  strategyId: string,
+  titulo: string,
+  detalle: string | null,
+): Promise<TareaFila> {
+  const hermanas = await prisma.strategyTask.findMany({
+    where: { strategyId },
+    select: { estado: true, orden: true },
+  });
+
+  return prisma.strategyTask.create({
+    data: {
+      strategyId,
+      titulo: recortar(titulo, MAX_TITULO),
+      detalle: detalle ? recortar(detalle, MAX_DETALLE) : null,
+      // MANUAL para poder distinguirla de las derivadas de la estrategia: no
+      // comparten origen ni deberían compartir código de color.
+      origen: "MANUAL",
+      estado: "POR_HACER",
+      orden: siguienteOrden(hermanas, "POR_HACER"),
+    },
+    select: SELECT,
+  });
+}
+
+export async function editarTarea(
+  tareaId: string,
+  titulo: string,
+  detalle: string | null,
+): Promise<TareaFila> {
+  return prisma.strategyTask.update({
+    where: { id: tareaId },
+    data: {
+      titulo: recortar(titulo, MAX_TITULO),
+      detalle: detalle ? recortar(detalle, MAX_DETALLE) : null,
+    },
+    select: SELECT,
+  });
+}
+
+/** `null` deja la tarjeta sin responsable. */
+export async function asignarTarea(
+  tareaId: string,
+  asignadoAId: string | null,
+): Promise<TareaFila> {
+  return prisma.strategyTask.update({
+    where: { id: tareaId },
+    data: { asignadoAId },
+    select: SELECT,
+  });
+}
+
+export async function eliminarTarea(tareaId: string): Promise<void> {
+  await prisma.strategyTask.delete({ where: { id: tareaId } });
 }

@@ -5,6 +5,7 @@ import type { Role } from "@prisma/client";
 
 import {
   alternarActivoAction,
+  alternarPuedeInvitarAction,
   cambiarRolAction,
   type AccionResultado,
 } from "@/modules/usuarios/actions";
@@ -23,6 +24,7 @@ export interface PerfilFila {
   role: Role;
   isActive: boolean;
   empresaNombre: string | null;
+  puedeInvitar: boolean;
 }
 
 export function FilaUsuario({
@@ -44,7 +46,12 @@ export function FilaUsuario({
     FormData
   >(alternarActivoAction, null);
 
-  const mensaje = estadoRol ?? estadoActivo;
+  const [estadoInvitar, accionInvitar, pendienteInvitar] = useActionState<
+    AccionResultado | null,
+    FormData
+  >(alternarPuedeInvitarAction, null);
+
+  const mensaje = estadoRol ?? estadoActivo ?? estadoInvitar;
 
   return (
     // Mismo lenguaje de color que las estrategias: azul lo normal, rojo lo que
@@ -64,6 +71,11 @@ export function FilaUsuario({
             {esUsuarioActual && (
               <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-xs font-medium ring-1 ring-blue-400/40">
                 Tú
+              </span>
+            )}
+            {perfil.puedeInvitar && (
+              <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-medium ring-1 ring-emerald-400/40">
+                Puede invitar
               </span>
             )}
           </div>
@@ -125,6 +137,24 @@ export function FilaUsuario({
                 {perfil.isActive ? "Desactivar" : "Reactivar"}
               </button>
             </form>
+
+            {/* Solo para CLIENTE: en los demás roles el booleano no significa
+                nada —`puedeInvitarMiembros` los rechaza igualmente—, así que
+                ofrecerlo sería prometer algo que no va a ocurrir. */}
+            {perfil.role === "CLIENTE" && (
+              <form action={accionInvitar}>
+                <input type="hidden" name="profileId" value={perfil.id} />
+                <button
+                  type="submit"
+                  disabled={pendienteInvitar}
+                  className="rounded-md border border-white/30 px-2.5 py-1 text-sm hover:bg-white/15 disabled:opacity-50"
+                >
+                  {perfil.puedeInvitar
+                    ? "Quitar alta de equipo"
+                    : "Permitir alta de equipo"}
+                </button>
+              </form>
+            )}
           </div>
         )}
       </div>

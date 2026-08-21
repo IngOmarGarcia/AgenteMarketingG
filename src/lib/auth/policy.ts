@@ -15,11 +15,18 @@ export interface ProfileSnapshot {
   readonly role: Role;
   readonly clientId: string | null;
   readonly isActive: boolean;
+  /** Solo significa algo en un CLIENTE. Ver `puedeInvitarMiembros`. */
+  readonly puedeInvitar: boolean;
 }
 
 export type AccessDecision =
   /** Adelante. */
-  | { readonly type: "allow"; readonly role: Role; readonly clientId: string | null }
+  | {
+      readonly type: "allow";
+      readonly role: Role;
+      readonly clientId: string | null;
+      readonly puedeInvitar: boolean;
+    }
   /** Autenticado pero en la ruta equivocada → a su propio dashboard. */
   | { readonly type: "redirect"; readonly to: string }
   /**
@@ -69,7 +76,12 @@ export function decideAccess(
     return { type: "redirect", to: dashboardPathFor(profile.role) };
   }
 
-  return { type: "allow", role: profile.role, clientId: profile.clientId };
+  return {
+    type: "allow",
+    role: profile.role,
+    clientId: profile.clientId,
+    puedeInvitar: profile.puedeInvitar,
+  };
 }
 
 /**
@@ -132,7 +144,8 @@ export function puedeVerEstrategia(
 }
 
 /**
- * Quién puede mover las tarjetas del tablero de ejecución.
+ * Quién puede OPERAR el tablero de ejecución: mover, crear, editar, asignar y
+ * borrar tarjetas. Una sola regla para las cinco.
  *
  * SOLO el CLIENTE, y solo en las estrategias de su empresa. Es la única regla
  * del sistema que le da al cliente más permiso que al equipo, y es deliberado:
@@ -142,10 +155,42 @@ export function puedeVerEstrategia(
  *
  * El equipo sí ve el tablero: necesita saber por dónde va para asesorar.
  */
-export function puedeMoverTareas(
+export function puedeGestionarTablero(
   profile: Pick<ProfileSnapshot, "role" | "clientId">,
   estrategia: { clientId: string },
 ): boolean {
   if (profile.role !== "CLIENTE") return false;
   return profile.clientId === estrategia.clientId;
+}
+
+/**
+ * Quién puede dar de alta a nuevos miembros de su propia empresa.
+ *
+ * Las tres condiciones son necesarias:
+ *  - CLIENTE: el equipo de la agencia invita desde `/admin/usuarios`, que es
+ *    otra acción con otras reglas y sí puede elegir rol y empresa.
+ *  - Con empresa: sin `clientId` no habría a qué atar al invitado.
+ *  - Marcado: solo el miembro principal, para que la delegación no se propague
+ *    sola por toda la empresa.
+ */
+export function puedeInvitarMiembros(
+  profile: Pick<ProfileSnapshot, "role" | "clientId" | "puedeInvitar">,
+): boolean {
+  if (profile.role !== "CLIENTE") return false;
+  if (profile.clientId === null) return false;
+  return profile.puedeInvitar;
+}
+
+/**
+ * Si un perfil pertenece a una empresa concreta.
+ *
+ * Lo usa la asignación de tareas: sin esta comprobación en el servidor, cambiar
+ * el valor de un `<option>` asignaría trabajo a alguien de otra empresa y
+ * filtraría su nombre al devolver la fila.
+ */
+export function esMiembroDe(
+  profile: { clientId: string | null },
+  clientId: string,
+): boolean {
+  return profile.clientId === clientId;
 }

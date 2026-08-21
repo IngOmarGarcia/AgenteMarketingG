@@ -16,6 +16,8 @@ export const InvitarUsuarioSchema = z
     fullName: z.string().trim().min(1).max(120).optional(),
     role: RoleSchema,
     clientId: z.string().trim().min(1).nullable().default(null),
+    /** Solo tiene efecto en un CLIENTE. Ver `puedeInvitarMiembros`. */
+    puedeInvitar: z.boolean().default(false),
   })
   .superRefine((val, ctx) => {
     if (val.role === "CLIENTE" && val.clientId === null) {
@@ -64,3 +66,21 @@ export const CambiarRolSchema = z
   });
 
 export type CambiarRolData = z.output<typeof CambiarRolSchema>;
+
+/**
+ * Alta de un miembro por parte del propio cliente.
+ *
+ * NO tiene `role` ni `clientId`, y esa ausencia es la medida de seguridad
+ * central de este flujo: los dos salen de la sesión de quien invita. Si el
+ * schema los aceptara, bastaría con añadir dos campos ocultos al formulario
+ * para invitarse un ADMIN o colgar un usuario de otra empresa.
+ *
+ * Zod descarta las claves desconocidas por defecto, así que aunque lleguen se
+ * quedan fuera de `data`.
+ */
+export const InvitarMiembroSchema = z.object({
+  email: z.string().email("Email no válido"),
+  fullName: z.string().trim().min(1).max(120).optional(),
+});
+
+export type InvitarMiembroData = z.output<typeof InvitarMiembroSchema>;

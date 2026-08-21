@@ -86,12 +86,24 @@ model Profile {
   clientId String?
 
   isActive  Boolean  @default(true)
+
+  /// Solo significa algo en un CLIENTE: marca al miembro que puede dar de alta
+  /// a otros de SU MISMA empresa. Los que él crea nacen con `false`.
+  ///
+  /// Es un booleano y no un rol nuevo a propósito: `puedeVerEstrategia`,
+  /// `puedeGestionarTablero` y `puedeGenerarPara` usan `role !== "CLIENTE"`
+  /// como sinónimo de "es del equipo", así que un rol intermedio atravesaría
+  /// los tres y obtendría acceso de agencia sin que nada lo detectara.
+  puedeInvitar Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   /// SetNull y no Cascade: borrar una empresa cliente no debe borrar la
   /// cuenta de la persona, solo dejarla sin empresa asignada.
   client Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  tareasAsignadas StrategyTask[]
 
   @@index([role])
   @@index([clientId])
@@ -135,6 +147,8 @@ enum TareaOrigen {
   QUICK_WIN
   CANAL
   PILAR
+  /// Creada a mano por el cliente, no derivada de la estrategia.
+  MANUAL
 }
 
 /// Tarjeta del tablero de ejecución de una estrategia.
@@ -155,6 +169,10 @@ model StrategyTask {
   /// Posición dentro de su columna. Al mover, la tarea se encola al final.
   orden Int
 
+  /// Responsable. Siempre un perfil de la MISMA empresa; lo comprueba la
+  /// Server Action, porque el schema no puede expresar esa relación cruzada.
+  asignadoAId String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -162,9 +180,14 @@ model StrategyTask {
   /// APPROVED no se puede borrar, así que un tablero en uso no desaparece.
   strategy Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
 
+  /// SetNull: dar de baja a una persona no borra el trabajo que tenía
+  /// asignado, solo lo deja sin responsable.
+  asignadoA Profile? @relation(fields: [asignadoAId], references: [id], onDelete: SetNull)
+
   /// Cubre exactamente la consulta del tablero: las tareas de una estrategia,
   /// agrupadas por columna y ordenadas dentro de ella.
   @@index([strategyId, estado, orden])
+  @@index([asignadoAId])
 }
 
 model StrategyOutcome {

@@ -5,6 +5,7 @@ import type { PrismaClient } from "@prisma/client";
 
 import {
   CambiarRolSchema,
+  InvitarMiembroSchema,
   InvitarUsuarioSchema,
 } from "@/modules/usuarios/schemas";
 import {
@@ -94,6 +95,7 @@ const ENTRADA = {
   role: "COLABORADOR" as const,
   clientId: null,
   fullName: undefined,
+  puedeInvitar: false,
 };
 
 test("alta correcta usa el UUID de Supabase como id del Profile", async () => {
@@ -153,4 +155,42 @@ test("invitación fallida en Supabase no intenta compensar", async () => {
   if (r.ok) return;
   assert.equal(r.error.kind, "auth");
   assert.equal(borrados.length, 0);
+});
+
+// ── Alta de miembros por el propio cliente ────────────────────────────────
+
+test("el schema del miembro descarta rol y empresa aunque lleguen", () => {
+  // Es LA medida de seguridad del flujo: si estos dos campos sobrevivieran a
+  // la validación, bastaría con añadir dos inputs ocultos al formulario para
+  // invitarse un ADMIN o colgar un usuario de otra empresa.
+  const r = InvitarMiembroSchema.safeParse({
+    email: "nuevo@empresa.com",
+    role: "ADMIN",
+    clientId: "empresa_ajena",
+    puedeInvitar: true,
+  });
+
+  assert.equal(r.success, true);
+  if (!r.success) return;
+  assert.equal("role" in r.data, false);
+  assert.equal("clientId" in r.data, false);
+  assert.equal("puedeInvitar" in r.data, false);
+  assert.deepEqual(Object.keys(r.data).sort(), ["email"]);
+});
+
+test("el miembro necesita un email válido", () => {
+  assert.equal(InvitarMiembroSchema.safeParse({ email: "no-es-email" }).success, false);
+});
+
+test("el nombre del miembro es opcional", () => {
+  const r = InvitarMiembroSchema.safeParse({ email: "a@b.com" });
+  assert.equal(r.success, true);
+});
+
+test("el servicio nunca concede el permiso por defecto", async () => {
+  const { db, creados } = fakeDb();
+  const { auth } = fakeAuth();
+  await new UsuariosService(db, auth).invitar(ENTRADA, { redirectTo: "/x" });
+
+  assert.equal((creados[0] as { puedeInvitar: boolean }).puedeInvitar, false);
 });
