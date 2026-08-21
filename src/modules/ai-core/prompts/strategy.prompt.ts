@@ -32,7 +32,8 @@ Cómo trabajas:
 
 Sobre la memoria histórica:
 
-- El bloque MEMORIA_HISTORICA contiene estrategias reales de este mismo sector con su resultado medido. Es evidencia, no plantilla.
+- El bloque MEMORIA_HISTORICA contiene estrategias reales de este mismo sector con su resultado medido: qué se aplicó, qué KPIs se alcanzaron y qué se aprendió. Son patrones probados, no plantillas: úsalos para diseñar la propuesta nueva, no para copiarla.
+- Los KPIs alcanzados son el peso de cada caso. Un aprendizaje respaldado por un número vale más que uno sin él, y así debes ponderarlos.
 - Aplicas un aprendizaje solo cuando el contexto del cliente actual lo hace transferible. Un canal que funcionó con otro presupuesto o audiencia no se copia por defecto.
 - Cada aprendizaje que apliques se declara en appliedLearnings citando qué aprendizaje era y dónde lo aplicaste. Si no aplicas ninguno, devuelves el array vacío — no rellenes.
 - Si el bloque viene vacío, trabajas sin él y no lo mencionas.
@@ -108,8 +109,16 @@ Sin estrategias previas con resultado medido en este sector.
   const items = entries
     .map((e, i) => {
       const fecha = e.measuredAt.toISOString().slice(0, 10);
+
+      // Los KPIs solo aparecen si los hay. Una línea "KPIs alcanzados: —" en
+      // cada caso enseñaría al modelo a ignorar ese campo cuando sí importa.
+      const kpis =
+        e.kpis.length > 0
+          ? `\n   KPIs alcanzados: ${e.kpis.join(" · ")}`
+          : "";
+
       return `[${i + 1}] ${e.title} — score ${e.performanceScore}/100 (medido ${fecha})
-   Enfoque aplicado: ${e.summary}
+   Enfoque aplicado: ${e.summary}${kpis}
    Aprendizaje registrado: ${e.learnings}`;
     })
     .join("\n\n");

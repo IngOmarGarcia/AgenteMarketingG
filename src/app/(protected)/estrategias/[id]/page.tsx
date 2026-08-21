@@ -122,6 +122,27 @@ export default async function EstrategiaPage({
         </section>
       )}
 
+      {/* El registro del resultado es la puerta de entrada a la memoria
+          histórica, y solo tiene sentido sobre lo que se llegó a ejecutar. */}
+      {esDelEquipo && estrategia.status === StrategyStatus.APPROVED && (
+        <Link
+          href={`/estrategias/${estrategia.id}/resultado`}
+          className={claseTono(
+            "neutral",
+            "flex flex-wrap items-center justify-between gap-2 rounded-lg p-5",
+          )}
+        >
+          <div>
+            <h2 className="font-medium">Resultado real</h2>
+            <p className="mt-1 text-sm opacity-80">
+              Registra los KPIs alcanzados y lo aprendido. Los casos de éxito
+              alimentan las próximas generaciones de este sector.
+            </p>
+          </div>
+          <span className="text-sm font-medium">Registrar →</span>
+        </Link>
+      )}
+
       {esDelEquipo && puedeDesaprobarse(estrategia.status).permitida && (
         <section className={claseTono("neutral", "rounded-lg p-5")}>
           <h2 className="font-medium">Publicada para el cliente</h2>

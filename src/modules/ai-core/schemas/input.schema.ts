@@ -63,6 +63,12 @@ export const HistoricalMemoryEntrySchema = z.object({
   measuredAt: z.date(),
   /** Extracto del contenido original, ya recortado por BrainService. */
   summary: z.string(),
+  /**
+   * KPIs alcanzados, ya formateados y acotados por BrainService. Es lo que
+   * convierte un aprendizaje en evidencia: sin el número, el modelo solo
+   * recibe una opinión.
+   */
+  kpis: z.array(z.string()).default([]),
 });
 
 export const GenerateStrategyInputSchema = z.object({

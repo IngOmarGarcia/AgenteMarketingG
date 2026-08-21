@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { err, ok, type Result } from "@/lib/result";
 import type { HistoricalMemoryEntry } from "@/modules/ai-core/schemas/input.schema";
 import { BrainServiceError } from "@/modules/strategy/errors";
+import { formatearKpis } from "@/modules/strategy/resultados";
 
 /**
  * Límites duros del bloque de memoria.
@@ -39,6 +40,7 @@ type OutcomeRow = {
   learnings: string;
   measuredAt: Date;
   sector: Sector;
+  metrics: Prisma.JsonValue;
   strategy: {
     id: string;
     title: string;
@@ -68,8 +70,10 @@ export class BrainService {
    *    un nodo Sort.
    *  - El filtro por `sector` está en StrategyOutcome (desnormalizado), no
    *    en Strategy: así el filtro ocurre ANTES del JOIN y no después.
-   *  - `select` explícito en vez de `include`: `metrics` es un JSON que puede
-   *    pesar y no se usa en el prompt. No se trae.
+   *  - `select` explícito en vez de `include`. `metrics` SÍ se trae ahora:
+   *    los KPIs alcanzados son lo que convierte un aprendizaje en evidencia.
+   *    Se acotan al formatear (6 por caso), que es lo que hace asumible su
+   *    coste en un bloque que entra en cada generación.
    *
    * `excludeClientId` va como `NOT` sobre la relación; con volumen alto
    * conviene medirlo — si el planner lo resuelve como anti-join costoso,
@@ -110,6 +114,7 @@ export class BrainService {
           learnings: true,
           measuredAt: true,
           sector: true,
+          metrics: true,
           strategy: {
             select: { id: true, title: true, content: true },
           },
@@ -163,6 +168,7 @@ export class BrainService {
           sector: Sector;
           performance_score: number;
           learnings: string;
+          metrics: Prisma.JsonValue;
           measured_at: Date;
         }>
       >`
@@ -173,6 +179,7 @@ export class BrainService {
           o."sector"            AS sector,
           o."performanceScore"  AS performance_score,
           o."learnings"         AS learnings,
+          o."metrics"           AS metrics,
           o."measuredAt"        AS measured_at
         FROM "StrategyOutcome" o
         JOIN "Strategy" s ON s."id" = o."strategyId"
@@ -196,6 +203,7 @@ export class BrainService {
             learnings: row.learnings,
             measuredAt: row.measured_at,
             sector: row.sector,
+            metrics: row.metrics,
             strategy: {
               id: row.strategy_id,
               title: row.title,
@@ -219,6 +227,7 @@ export class BrainService {
       learnings: truncate(row.learnings, BRAIN_LIMITS.maxLearningsChars),
       measuredAt: row.measuredAt,
       summary: BrainService.extractSummary(row.strategy.content),
+      kpis: formatearKpis(row.metrics),
     };
   }
 

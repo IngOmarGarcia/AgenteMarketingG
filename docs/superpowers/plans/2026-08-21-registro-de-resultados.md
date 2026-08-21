@@ -34,7 +34,7 @@ gana unas líneas de KPI por caso.
 - `parseKpis(texto: string): Record<string, string>`
 - `formatearKpis(metrics: unknown): string[]`
 
-- [ ] **Paso 1: Tests que fallan**
+- [x] **Paso 1: Tests que fallan**
 
 ```ts
 test("las estrellas se guardan en la escala 0-100", () => {
@@ -100,9 +100,9 @@ test("formatearKpis produce líneas legibles y acotadas", () => {
 });
 ```
 
-- [ ] **Paso 2** — `npm test` → falla.
-- [ ] **Paso 3** — Implementar.
-- [ ] **Paso 4** — `npm test` → pasa.
+- [x] **Paso 2** — `npm test` → falla.
+- [x] **Paso 3** — Implementar.
+- [x] **Paso 4** — `npm test` → pasa.
 
 ---
 
@@ -113,10 +113,10 @@ test("formatearKpis produce líneas legibles y acotadas", () => {
 - `src/modules/strategy/services/brain.service.ts` — traer `metrics`
 - `src/modules/ai-core/prompts/strategy.prompt.ts` — rendirlos
 
-- [ ] **Paso 1** — `HistoricalMemoryEntrySchema` gana `kpis: z.array(z.string()).default([])`.
-- [ ] **Paso 2** — `OutcomeRow` y el `select` de `BrainService` incluyen `metrics`;
+- [x] **Paso 1** — `HistoricalMemoryEntrySchema` gana `kpis: z.array(z.string()).default([])`.
+- [x] **Paso 2** — `OutcomeRow` y el `select` de `BrainService` incluyen `metrics`;
   `toMemoryEntry` llama a `formatearKpis`.
-- [ ] **Paso 3** — `renderHistoricalMemory` añade la línea de KPIs cuando los hay:
+- [x] **Paso 3** — `renderHistoricalMemory` añade la línea de KPIs cuando los hay:
 
 ```
 [1] Título — score 88/100 (medido 2026-06-01)
@@ -125,7 +125,7 @@ test("formatearKpis produce líneas legibles y acotadas", () => {
    Aprendizaje registrado: …
 ```
 
-- [ ] **Paso 4** — `npx tsc --noEmit` limpio.
+- [x] **Paso 4** — `npx tsc --noEmit` limpio.
 
 ---
 
@@ -135,11 +135,11 @@ test("formatearKpis produce líneas legibles y acotadas", () => {
 - `src/modules/strategy/resultados.schema.ts`
 - `src/modules/strategy/actions/registrar-resultado.action.ts`
 
-- [ ] **Paso 1** — Schema Zod: estrellas 1–5, desenlace, KPIs (texto),
+- [x] **Paso 1** — Schema Zod: estrellas 1–5, desenlace, KPIs (texto),
   aprendizajes obligatorios, fecha.
-- [ ] **Paso 2** — Acción: `requireRole("ADMIN","COLABORADOR")`, comprobar que la
+- [x] **Paso 2** — Acción: `requireRole("ADMIN","COLABORADOR")`, comprobar que la
   estrategia está `APPROVED`, y `upsert` sobre `strategyId`.
-- [ ] **Paso 3** — `sector` se copia de la estrategia, NO se pide: está
+- [x] **Paso 3** — `sector` se copia de la estrategia, NO se pide: está
   desnormalizado en `StrategyOutcome` para que el filtro de la memoria ocurra
   antes del JOIN.
 
@@ -152,19 +152,19 @@ test("formatearKpis produce líneas legibles y acotadas", () => {
 - `src/app/(protected)/estrategias/[id]/resultado/resultado-form.tsx`
 - `src/app/(protected)/estrategias/[id]/page.tsx` — enlace
 
-- [ ] **Paso 1** — Página con permisos y aviso si no está aprobada.
-- [ ] **Paso 2** — Formulario con estrellas, desenlace, KPIs y aprendizajes,
+- [x] **Paso 1** — Página con permisos y aviso si no está aprobada.
+- [x] **Paso 2** — Formulario con estrellas, desenlace, KPIs y aprendizajes,
   precargado si ya existe.
-- [ ] **Paso 3** — La etiqueta de aprendizajes dice que ES lo que se inyecta en
+- [x] **Paso 3** — La etiqueta de aprendizajes dice que ES lo que se inyecta en
   futuras generaciones.
-- [ ] **Paso 4** — Enlace desde el detalle, solo equipo y solo si está aprobada.
-- [ ] **Paso 5** — `npm test && npx tsc --noEmit && npx eslint src scripts && npx next build`.
+- [x] **Paso 4** — Enlace desde el detalle, solo equipo y solo si está aprobada.
+- [x] **Paso 5** — `npm test && npx tsc --noEmit && npx eslint src scripts && npx next build`.
 
 ---
 
 ## Task 5: Verificación
 
-- [ ] **Paso 1** — Registrar un resultado real y comprobar la fila.
-- [ ] **Paso 2** — Comprobar que `getHistoricalMemory` lo devuelve con sus KPIs.
-- [ ] **Paso 3** — Comprobar que con 3 estrellas NO entra.
+- [x] **Paso 1** — Registrar un resultado real y comprobar la fila.
+- [x] **Paso 2** — Comprobar que `getHistoricalMemory` lo devuelve con sus KPIs.
+- [x] **Paso 3** — Comprobar que con 3 estrellas NO entra.
 - [ ] **Paso 4** — Recorrido manual en navegador.
