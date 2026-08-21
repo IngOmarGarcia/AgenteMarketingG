@@ -9,7 +9,10 @@ export function CerrarSesionBoton() {
     <form action={cerrarSesion}>
       <button
         type="submit"
-        className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+        // Rojo translúcido, no relleno: cerrar sesión es destructivo, pero está
+        // en la barra de todas las pantallas y un botón sólido ahí competiría
+        // con la acción principal de cada vista.
+        className="rounded-md border border-red-400/50 bg-red-500/15 px-3 py-1.5 text-sm font-medium text-red-100 transition hover:bg-red-500/30 hover:text-white"
       >
         Salir
       </button>

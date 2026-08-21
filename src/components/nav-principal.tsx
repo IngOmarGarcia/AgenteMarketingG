@@ -3,6 +3,7 @@ import Image from "next/image";
 import type { Role } from "@prisma/client";
 
 import { CerrarSesionBoton } from "@/components/cerrar-sesion-boton";
+import { EnlacesNav } from "@/components/enlaces-nav";
 
 /** Enlaces visibles por rol. La navegación no es seguridad: cada ruta se
  *  protege igualmente en su propio layout. Esto solo evita enseñar enlaces
@@ -67,17 +68,7 @@ export function NavPrincipal({ email, role }: { email: string; role: Role }) {
             />
           </Link>
 
-          <nav className="flex items-center gap-4">
-            {ENLACES[role].map((e) => (
-              <Link
-                key={e.href}
-                href={e.href}
-                className="text-sm font-medium text-zinc-700 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-white"
-              >
-                {e.label}
-              </Link>
-            ))}
-          </nav>
+          <EnlacesNav enlaces={ENLACES[role]} />
         </div>
 
         {/* Contenedor Derecho: Usuario, Rol y Salir */}
