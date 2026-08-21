@@ -315,7 +315,7 @@ function Metrica({
       <div className="mt-0.5 flex items-center gap-1.5 text-xs opacity-70">
         {etiqueta}
         {activo && (
-          <span className="rounded-full bg-[var(--primary)] px-1.5 py-px text-[10px] font-medium text-[var(--primary-foreground)] opacity-100">
+          <span className="rounded-full bg-[var(--primary)] px-1.5 py-px text-xs font-medium text-[var(--primary-foreground)] opacity-100">
             filtrando
           </span>
         )}

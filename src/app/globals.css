@@ -22,6 +22,18 @@
   }
 }
 
+/* --- ESCALA TIPOGRÁFICA BASE ---
+   Todo Tailwind mide en `rem`, así que el tamaño de raíz es la única palanca
+   que escala texto, espaciados y radios a la vez y de forma proporcional.
+
+   `clamp` en lugar de un valor fijo: 16px en móvil, donde subirlo apretaría el
+   contenido contra los bordes, y hasta 18px en monitores anchos, que es donde
+   la interfaz se veía pequeña y lejana. El tramo intermedio crece con el ancho
+   de ventana, no a saltos. */
+html {
+  font-size: clamp(16px, 0.9rem + 0.25vw, 18px);
+}
+
 /* --- FONDO ANIMADO CON DEGRADADO EN MOVIMIENTO --- */
 body {
   background: linear-gradient(135deg, #000000, #4271bd, #3f0a01);

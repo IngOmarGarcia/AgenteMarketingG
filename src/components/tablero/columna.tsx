@@ -39,7 +39,7 @@ export function Columna({
             {tareas.length}
           </span>
         </h2>
-        <p className="text-[11px] opacity-50">{ayuda}</p>
+        <p className="text-xs opacity-50">{ayuda}</p>
       </header>
 
       <ul className="flex flex-1 flex-col gap-2">

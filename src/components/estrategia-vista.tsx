@@ -37,11 +37,11 @@ export function EstrategiaVista({
   return (
     <div className="space-y-6">
       <Seccion titulo="Resumen ejecutivo">
-        <p className="text-[15px] leading-relaxed">{strategy.executiveSummary}</p>
+        <p className="text-base leading-relaxed">{strategy.executiveSummary}</p>
       </Seccion>
 
       <Seccion titulo="Posicionamiento">
-        <p className="text-[15px] leading-relaxed">{strategy.positioning}</p>
+        <p className="text-base leading-relaxed">{strategy.positioning}</p>
       </Seccion>
 
       {strategy.objectives.length > 0 && (
@@ -146,7 +146,7 @@ export function EstrategiaVista({
         <Seccion titulo="Primeros 30 días">
           <ul className="space-y-2">
             {strategy.quickWins.map((q, i) => (
-              <li key={i} className="flex gap-3 text-[15px]">
+              <li key={i} className="flex gap-3 text-base">
                 <span className="mt-0.5 tabular-nums opacity-40">
                   {String(i + 1).padStart(2, "0")}
                 </span>

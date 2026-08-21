@@ -20,7 +20,13 @@ export default async function ProtectedLayout({
   return (
     <div className="flex min-h-full flex-col">
       <NavPrincipal email={session.email} role={session.role} />
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+      {/* 1400px en lugar de max-w-6xl (1152px): en un monitor de 1920 aquello
+          dejaba casi 400px muertos a cada lado. El tope sigue existiendo porque
+          sin él las líneas de texto se vuelven ilegibles de tan largas.
+
+          El padding crece por tramos en vez de ser fijo: 1rem pegado al borde
+          en móvil, 2rem cuando hay sitio de sobra. */}
+      <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-8 sm:px-6 lg:px-8">
         {children}
       </main>
     </div>

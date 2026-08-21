@@ -47,7 +47,7 @@ export function TarjetaTarea({
       {...(puedeMover ? attributes : {})}
     >
       <span
-        className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ${COLOR_ORIGEN[origen]}`}
+        className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${COLOR_ORIGEN[origen]}`}
       >
         {ETIQUETA_ORIGEN[origen]}
       </span>

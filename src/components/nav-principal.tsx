@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Role } from "@prisma/client";
 
 import { CerrarSesionBoton } from "@/components/cerrar-sesion-boton";
@@ -26,21 +27,43 @@ const ETIQUETA_ROL: Readonly<Record<Role, string>> = {
 };
 
 export function NavPrincipal({ email, role }: { email: string; role: Role }) {
+  // Determina a dónde redirige el logo al hacer clic según el rol
+  const rutaInicio = role === "CLIENTE" ? "/cliente" : role === "ADMIN" ? "/admin" : "/colaborador";
+
   return (
     <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-3">
-        <nav className="flex items-center gap-4">
-          {ENLACES[role].map((e) => (
-            <Link
-              key={e.href}
-              href={e.href}
-              className="text-sm font-medium text-zinc-700 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-white"
-            >
-              {e.label}
-            </Link>
-          ))}
-        </nav>
+      {/* Mismo ancho y mismo padding que el <main> del layout: si la cabecera y
+          el contenido no comparten la caja, los enlaces quedan desalineados con
+          los títulos de debajo y se nota. */}
+      <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        
+        {/* Contenedor Izquierdo: Logo + Enlaces */}
+        <div className="flex items-center gap-6">
+          <Link href={rutaInicio} className="flex items-center gap-2 transition-opacity hover:opacity-80">
+            <Image
+              src="/gravita.png"
+              alt="Gravita Logo"
+              width={120}
+              height={48}
+              className="h-12 w-auto object-contain"
+              priority
+            />
+          </Link>
 
+          <nav className="flex items-center gap-4">
+            {ENLACES[role].map((e) => (
+              <Link
+                key={e.href}
+                href={e.href}
+                className="text-sm font-medium text-zinc-700 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-white"
+              >
+                {e.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+
+        {/* Contenedor Derecho: Usuario, Rol y Salir */}
         <div className="flex items-center gap-3">
           <span className="hidden text-sm text-zinc-500 sm:inline dark:text-zinc-400">
             {email}
@@ -50,6 +73,7 @@ export function NavPrincipal({ email, role }: { email: string; role: Role }) {
           </span>
           <CerrarSesionBoton />
         </div>
+
       </div>
     </header>
   );
