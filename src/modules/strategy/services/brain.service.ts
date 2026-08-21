@@ -64,7 +64,7 @@ export class BrainService {
    * Está diseñada alrededor del índice
    * `StrategyOutcome(sector, status, performanceScore DESC)`:
    *
-   *  - `sector` y `status` son igualdades → prefijo del índice.
+   *  - `sector`, `status` y `revisado` son igualdades → prefijo del índice.
    *  - `performanceScore` es un rango + ORDER BY DESC → sufijo del índice,
    *    así Postgres resuelve el orden con el propio index scan y NO añade
    *    un nodo Sort.
@@ -104,6 +104,11 @@ export class BrainService {
         where: {
           sector: params.sector,
           status: OutcomeStatus.SUCCESS,
+          // Barrera de revisión. Desde que el cliente puede escribir
+          // `learnings`, ese texto deja de estar bajo control de la agencia: sin
+          // este filtro, cualquiera podría colocar instrucciones dirigidas al
+          // modelo en el contexto de un competidor de su sector.
+          revisado: true,
           performanceScore: { gte: minScore },
           ...(params.excludeClientId
             ? { strategy: { clientId: { not: params.excludeClientId } } }
@@ -185,6 +190,9 @@ export class BrainService {
         JOIN "Strategy" s ON s."id" = o."strategyId"
         WHERE o."sector" = ${params.sector}::"Sector"
           AND o."status" = 'SUCCESS'::"OutcomeStatus"
+          -- Misma barrera que en la consulta de arriba. Las dos variantes deben
+          -- filtrar igual o una de ellas se convertiría en la puerta trasera.
+          AND o."revisado" = true
           AND o."performanceScore" >= ${minScore}
           AND (${params.excludeClientId ?? null}::text IS NULL
                OR s."clientId" <> ${params.excludeClientId ?? null}::text)

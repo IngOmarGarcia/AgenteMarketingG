@@ -6,12 +6,13 @@ import { revalidatePath } from "next/cache";
 import { OutcomeStatus, StrategyStatus } from "@prisma/client";
 import { z } from "zod";
 
-import { verifySession } from "@/lib/auth/dal";
+import { requireRole, verifySession } from "@/lib/auth/dal";
 import { puedeRegistrarResultado } from "@/lib/auth/policy";
 import { prisma } from "@/lib/prisma";
 import {
   estrellasAScore,
   parseKpis,
+  revisadoTrasEscritura,
   ESTRELLAS_MAX,
   ESTRELLAS_MIN,
 } from "@/modules/strategy/resultados";
@@ -120,6 +121,11 @@ export async function registrarResultadoAction(
     metrics: parseKpis(parsed.data.kpis),
     learnings: parsed.data.learnings,
     measuredAt: medido,
+
+    // Se recalcula en CADA escritura, también al editar. Si el cliente cambia
+    // el texto de un caso ya revisado, vuelve a quedar fuera de la memoria
+    // hasta que alguien del equipo lo mire otra vez.
+    revisado: revisadoTrasEscritura(session.role),
   };
 
   // `strategyId` es @unique: hay como mucho un resultado por estrategia, así
@@ -134,12 +140,58 @@ export async function registrarResultadoAction(
   revalidatePath(`/estrategias/${strategyId}/resultado`);
   revalidatePath("/admin");
 
-  const entraEnMemoria = datos.performanceScore >= 70 && datos.status === "SUCCESS";
+  const califica = datos.performanceScore >= 70 && datos.status === "SUCCESS";
+
+  if (!califica) {
+    return {
+      ok: true,
+      mensaje:
+        "Resultado guardado. Con esta calificación no entra en la memoria histórica, que solo usa casos de éxito de 4 estrellas o más.",
+    };
+  }
 
   return {
     ok: true,
-    mensaje: entraEnMemoria
+    mensaje: datos.revisado
       ? "Resultado guardado. Este caso ya alimenta las próximas generaciones de su sector."
-      : "Resultado guardado. Con esta calificación no entra en la memoria histórica, que solo usa casos de éxito de 4 estrellas o más.",
+      : "Resultado guardado. Entrará en la memoria que alimenta a la IA cuando el equipo de la agencia lo revise.",
+  };
+}
+
+/**
+ * Da por bueno un resultado escrito por el cliente para que entre en la memoria.
+ *
+ * Solo ADMIN y COLABORADOR: es precisamente la revisión que la barrera exige, y
+ * dejar que la hiciera quien escribió el texto la vaciaría de sentido.
+ *
+ * Existe además de la regla automática porque el caso normal es leer lo que
+ * escribió el cliente y darlo por bueno SIN tocarlo. Sin este botón habría que
+ * abrir el formulario y volver a guardar para conseguir lo mismo, con el riesgo
+ * de cambiar algo sin querer.
+ *
+ * No recibe estado previo ni FormData: no hay nada que leer más allá de qué
+ * estrategia es, y ese id va atado en el componente que la invoca.
+ */
+export async function marcarResultadoRevisadoAction(
+  strategyId: string,
+): Promise<ResultadoAccion> {
+  await requireRole("ADMIN", "COLABORADOR");
+
+  const { count } = await prisma.strategyOutcome.updateMany({
+    where: { strategyId, revisado: false },
+    data: { revisado: true },
+  });
+
+  if (count === 0) {
+    return {
+      ok: false,
+      mensaje: "No hay un resultado sin revisar para esta estrategia.",
+    };
+  }
+
+  revalidatePath(`/estrategias/${strategyId}/resultado`);
+  return {
+    ok: true,
+    mensaje: "Revisado. Este caso ya puede alimentar las próximas generaciones.",
   };
 }

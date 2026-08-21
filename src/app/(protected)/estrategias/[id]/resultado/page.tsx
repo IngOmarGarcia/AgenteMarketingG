@@ -18,6 +18,7 @@ import {
   ResultadoForm,
   type ValoresResultado,
 } from "@/app/(protected)/estrategias/[id]/resultado/resultado-form";
+import { RevisarBoton } from "@/app/(protected)/estrategias/[id]/resultado/revisar-boton";
 
 /**
  * Resultado real de una estrategia. Acceso dual.
@@ -53,6 +54,7 @@ export default async function ResultadoPage({
           learnings: true,
           metrics: true,
           measuredAt: true,
+          revisado: true,
         },
       },
     },
@@ -62,6 +64,7 @@ export default async function ResultadoPage({
   if (!puedeVerEstrategia(session, estrategia)) notFound();
 
   const puedeEditar = puedeRegistrarResultado(session, estrategia);
+  const esDelEquipo = session.role !== "CLIENTE";
   const o = estrategia.outcome;
 
   const cabecera = (
@@ -123,6 +126,13 @@ export default async function ResultadoPage({
               )}
 
               <p className="mt-4 text-sm opacity-90">{o.learnings}</p>
+
+              {!o.revisado && (
+                <p className="mt-3 text-xs opacity-60">
+                  Pendiente de revisión por la agencia: todavía no alimenta a
+                  la IA.
+                </p>
+              )}
             </>
           ) : (
             <p className="text-sm opacity-80">
@@ -162,6 +172,30 @@ export default async function ResultadoPage({
           la ficha de {estrategia.client.name}, solo el enfoque, los números y el
           aprendizaje.
         </p>
+
+        {o && !o.revisado && (
+          <div
+            className={claseTono("info", "mb-5 rounded-lg p-4 text-sm")}
+          >
+            <p className="font-medium">Pendiente de revisión</p>
+            <p className="mt-1 opacity-85">
+              Este resultado está guardado, pero todavía NO alimenta a la IA. El
+              texto de aprendizaje acaba dentro del prompt que genera las
+              estrategias de otras empresas del sector, así que pasa antes por el
+              equipo de la agencia.
+            </p>
+            {esDelEquipo && <RevisarBoton strategyId={estrategia.id} />}
+          </div>
+        )}
+
+        {o?.revisado && (
+          <p className="mb-5 text-sm opacity-70">
+            Revisado: este caso ya puede alimentar las próximas generaciones de
+            su sector.{" "}
+            {!esDelEquipo &&
+              "Si editas algo, volverá a quedar pendiente de revisión."}
+          </p>
+        )}
 
         <ResultadoForm
           strategyId={estrategia.id}

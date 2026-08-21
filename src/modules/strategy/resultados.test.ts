@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   estrellasAScore,
+  revisadoTrasEscritura,
   formatearKpis,
   MAX_KPI_CHARS,
   MAX_KPIS,
@@ -117,4 +118,27 @@ test("formatearKpis recorta líneas largas y limita la cantidad", () => {
     Array.from({ length: 20 }, (_, i) => [`k${i}`, String(i)]),
   );
   assert.equal(formatearKpis(muchos).length, MAX_KPIS);
+});
+
+// ── Barrera de revisión ───────────────────────────────────────────────────
+
+test("lo que escribe el equipo nace revisado", () => {
+  // Que lo escriba el equipo ES la revisión: pedirles un segundo clic sobre su
+  // propio texto sería ceremonia sin contenido.
+  assert.equal(revisadoTrasEscritura("ADMIN"), true);
+  assert.equal(revisadoTrasEscritura("COLABORADOR"), true);
+});
+
+test("lo que escribe el cliente nace SIN revisar", () => {
+  assert.equal(revisadoTrasEscritura("CLIENTE"), false);
+});
+
+test("una edición del cliente devuelve el caso a sin revisar", () => {
+  // Es el invariante que sostiene la barrera entera. Sin este reseteo bastaría
+  // con pasar la revisión con un texto inocuo y cambiarlo después: el nuevo
+  // acabaría igual en el prompt de un competidor.
+  //
+  // La función no recibe el estado anterior a propósito: el resultado depende
+  // SOLO de quién escribe, así que no hay forma de conservar un `true` viejo.
+  assert.equal(revisadoTrasEscritura("CLIENTE"), false);
 });

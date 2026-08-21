@@ -208,8 +208,25 @@ model StrategyOutcome {
   learnings        String        @db.Text
   measuredAt       DateTime
 
+  /// Barrera antes de que este caso entre en la memoria que alimenta a la IA.
+  ///
+  /// `learnings` viaja al prompt que genera la estrategia de OTRA empresa del
+  /// mismo sector. Desde que el cliente puede escribirlo, ese texto deja de
+  /// estar bajo control de la agencia: sin esta barrera, cualquiera podría
+  /// colocar instrucciones dirigidas al modelo en el contexto de un competidor.
+  ///
+  /// Lo pone en `true` cualquier escritura hecha por ADMIN o COLABORADOR —que
+  /// el equipo lo escriba ES la revisión— y lo devuelve a `false` cualquier
+  /// escritura hecha por el cliente, incluida una edición posterior. Sin ese
+  /// reseteo la barrera sería decorativa: bastaría con pasar la revisión y
+  /// luego cambiar el texto.
+  revisado Boolean @default(false)
+
   strategy Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
 
-  @@index([sector, status, performanceScore(sort: Desc)])
+  /// `revisado` entra como igualdad junto a `sector` y `status`, antes del
+  /// rango sobre `performanceScore`: así sigue siendo un prefijo del índice y
+  /// Postgres resuelve filtro y orden con un solo index scan.
+  @@index([sector, status, revisado, performanceScore(sort: Desc)])
   @@index([measuredAt(sort: Desc)])
 }

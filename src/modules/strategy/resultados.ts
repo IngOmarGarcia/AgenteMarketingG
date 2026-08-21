@@ -1,3 +1,5 @@
+import type { Role } from "@prisma/client";
+
 /**
  * Lógica pura del registro de resultados.
  *
@@ -122,4 +124,20 @@ export function formatearKpis(metrics: unknown): string[] {
   }
 
   return lineas;
+}
+
+/**
+ * Si una escritura del resultado deja el caso listo para entrar en la memoria.
+ *
+ * Que lo escriba el equipo ES la revisión: obligarles a un segundo clic sobre
+ * su propio texto sería ceremonia sin contenido.
+ *
+ * Que lo escriba el cliente lo devuelve a "sin revisar" SIEMPRE, incluida una
+ * edición posterior a haber sido aprobado. Ese reseteo es lo que sostiene la
+ * barrera entera: sin él bastaría con pasar la revisión con un texto inocuo y
+ * cambiarlo después por otro, que acabaría igualmente en el prompt de un
+ * competidor.
+ */
+export function revisadoTrasEscritura(role: Role): boolean {
+  return role !== "CLIENTE";
 }
