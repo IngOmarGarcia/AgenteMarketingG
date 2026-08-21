@@ -1,4 +1,5 @@
 import type { StrategyOutput } from "@/modules/ai-core/schemas/strategy.schema";
+import { claseTono } from "@/components/estado-estrategia";
 
 /**
  * Render de un `StrategyOutput` ya validado.
@@ -6,6 +7,11 @@ import type { StrategyOutput } from "@/modules/ai-core/schemas/strategy.schema";
  * Recibe el objeto parseado, nunca el `Json` crudo de la fila: quien lo llama
  * es responsable de haberlo pasado por `StrategyOutputSchema.safeParse()`. Así
  * este componente no tiene ni una rama defensiva.
+ *
+ * Cada sección es una tarjeta de vidrio neutro, igual que los contenedores de
+ * la vista de empresas: una estrategia no tiene estado que comunicar, así que
+ * el color se reserva para lo que sí lo tiene —las prioridades de canal y los
+ * riesgos— y el resto no compite por la atención.
  */
 
 const ETIQUETA_PRIORIDAD: Readonly<Record<string, string>> = {
@@ -14,11 +20,11 @@ const ETIQUETA_PRIORIDAD: Readonly<Record<string, string>> = {
   EXPERIMENTAL: "Experimental",
 };
 
+/** Translúcidos con anillo, como el resto de distintivos del sistema. */
 const COLOR_PRIORIDAD: Readonly<Record<string, string>> = {
-  PRIMARY: "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900",
-  SECONDARY: "bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100",
-  EXPERIMENTAL:
-    "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200",
+  PRIMARY: "bg-[var(--primary)] text-[var(--primary-foreground)]",
+  SECONDARY: "bg-white/15 ring-1 ring-white/25",
+  EXPERIMENTAL: "bg-amber-500/25 ring-1 ring-amber-400/40",
 };
 
 export function EstrategiaVista({
@@ -29,7 +35,7 @@ export function EstrategiaVista({
   presupuestoMensualEur: number;
 }) {
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <Seccion titulo="Resumen ejecutivo">
         <p className="text-[15px] leading-relaxed">{strategy.executiveSummary}</p>
       </Seccion>
@@ -42,20 +48,15 @@ export function EstrategiaVista({
         <Seccion titulo="Objetivos">
           <ul className="space-y-4">
             {strategy.objectives.map((o, i) => (
-              <li key={i} className="border-l-2 border-zinc-300 pl-4 dark:border-zinc-700">
+              <li key={i} className="border-l-2 border-white/25 pl-4">
                 <h3 className="font-medium">{o.name}</h3>
                 <p className="mt-1 text-sm">
-                  <span className="text-zinc-500 dark:text-zinc-400">KPI:</span>{" "}
-                  {o.kpi}
-                  <span className="mx-2 text-zinc-300 dark:text-zinc-700">|</span>
-                  <span className="text-zinc-500 dark:text-zinc-400">
-                    Objetivo:
-                  </span>{" "}
+                  <span className="opacity-60">KPI:</span> {o.kpi}
+                  <span className="mx-2 opacity-30">|</span>
+                  <span className="opacity-60">Objetivo:</span>{" "}
                   <span className="font-medium">{o.target}</span>
                 </p>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                  {o.rationale}
-                </p>
+                <p className="mt-1 text-sm opacity-70">{o.rationale}</p>
               </li>
             ))}
           </ul>
@@ -67,11 +68,11 @@ export function EstrategiaVista({
           titulo="Reparto por canal"
           nota={`Sobre ${presupuestoMensualEur.toLocaleString("es-US")} $/mes`}
         >
-          <ul className="space-y-4">
+          <ul className="space-y-5">
             {strategy.channelMix.map((c, i) => {
               // El modelo devuelve porcentajes. Un porcentaje es un gráfico;
               // el importe es lo que permite decidir.
-              const euros = Math.round(
+              const dinero = Math.round(
                 (c.budgetShare / 100) * presupuestoMensualEur,
               );
 
@@ -90,25 +91,23 @@ export function EstrategiaVista({
                     </div>
                     <span className="text-sm tabular-nums">
                       <span className="font-medium">
-                        {euros.toLocaleString("es-US")} $
+                        {dinero.toLocaleString("es-US")} $
                       </span>
-                      <span className="ml-2 text-zinc-500 dark:text-zinc-400">
-                        {c.budgetShare}%
-                      </span>
+                      <span className="ml-2 opacity-60">{c.budgetShare}%</span>
                     </span>
                   </div>
 
-                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/15">
                     <div
-                      className="h-full rounded-full bg-zinc-900 dark:bg-zinc-100"
-                      style={{ width: `${Math.min(100, Math.max(0, c.budgetShare))}%` }}
+                      className="h-full rounded-full bg-[var(--primary)]"
+                      style={{
+                        width: `${Math.min(100, Math.max(0, c.budgetShare))}%`,
+                      }}
                     />
                   </div>
 
-                  <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                    {c.approach}
-                  </p>
-                  <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-500">
+                  <p className="mt-2 text-sm opacity-80">{c.approach}</p>
+                  <p className="mt-1 text-sm opacity-60">
                     Resultado esperado: {c.expectedOutcome}
                   </p>
                 </li>
@@ -122,20 +121,15 @@ export function EstrategiaVista({
         <Seccion titulo="Pilares de contenido">
           <ul className="grid gap-4 sm:grid-cols-2">
             {strategy.contentPillars.map((p, i) => (
-              <li
-                key={i}
-                className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
-              >
+              <li key={i} className="rounded-lg bg-white/5 p-4 ring-1 ring-white/10">
                 <h3 className="font-medium">{p.title}</h3>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                  {p.description}
-                </p>
+                <p className="mt-1 text-sm opacity-70">{p.description}</p>
                 {p.formats.length > 0 && (
                   <ul className="mt-2 flex flex-wrap gap-1.5">
                     {p.formats.map((f, j) => (
                       <li
                         key={j}
-                        className="rounded bg-zinc-100 px-2 py-0.5 text-xs dark:bg-zinc-800"
+                        className="rounded bg-white/10 px-2 py-0.5 text-xs ring-1 ring-white/15"
                       >
                         {f}
                       </li>
@@ -153,7 +147,7 @@ export function EstrategiaVista({
           <ul className="space-y-2">
             {strategy.quickWins.map((q, i) => (
               <li key={i} className="flex gap-3 text-[15px]">
-                <span className="mt-0.5 text-zinc-400 tabular-nums dark:text-zinc-600">
+                <span className="mt-0.5 tabular-nums opacity-40">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <span>{q}</span>
@@ -169,14 +163,11 @@ export function EstrategiaVista({
             {strategy.risks.map((r, i) => (
               <li
                 key={i}
-                className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20"
+                className="rounded-lg bg-amber-500/10 p-4 ring-1 ring-amber-400/30"
               >
                 <p className="text-sm font-medium">{r.risk}</p>
-                <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
-                  <span className="text-zinc-500 dark:text-zinc-400">
-                    Mitigación:
-                  </span>{" "}
-                  {r.mitigation}
+                <p className="mt-1 text-sm opacity-80">
+                  <span className="opacity-70">Mitigación:</span> {r.mitigation}
                 </p>
               </li>
             ))}
@@ -193,7 +184,7 @@ export function EstrategiaVista({
             {strategy.appliedLearnings.map((a, i) => (
               <li
                 key={i}
-                className="border-l-2 border-emerald-400 pl-4 text-sm dark:border-emerald-700"
+                className="border-l-2 border-emerald-400/60 pl-4 text-sm opacity-90"
               >
                 {a}
               </li>
@@ -215,12 +206,10 @@ function Seccion({
   children: React.ReactNode;
 }) {
   return (
-    <section>
-      <div className="mb-3 flex flex-wrap items-baseline gap-x-3 border-b border-zinc-200 pb-2 dark:border-zinc-800">
+    <section className={claseTono("neutral", "rounded-lg p-6")}>
+      <div className="mb-4 flex flex-wrap items-baseline gap-x-3 border-b border-white/15 pb-2">
         <h2 className="text-lg font-medium">{titulo}</h2>
-        {nota && (
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">{nota}</span>
-        )}
+        {nota && <span className="text-xs opacity-60">{nota}</span>}
       </div>
       {children}
     </section>

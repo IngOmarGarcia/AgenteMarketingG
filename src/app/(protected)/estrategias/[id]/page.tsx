@@ -67,13 +67,13 @@ export default async function EstrategiaPage({
         {esDelEquipo && (
           <Link
             href={`/empresas/${estrategia.clientId}`}
-            className="text-sm text-zinc-500 hover:underline dark:text-zinc-400"
+            className="text-sm opacity-70 hover:underline"
           >
             ← {estrategia.client.name}
           </Link>
         )}
         <h1 className="mt-2 text-2xl font-semibold">{estrategia.title}</h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 text-sm opacity-70">
           {estrategia.client.name} · {ETIQUETA[estrategia.status]} ·{" "}
           {estrategia.createdAt.toLocaleDateString("es-ES", {
             day: "numeric",
@@ -207,7 +207,7 @@ function Cuerpo({
           Suele ser contenido creado antes de un cambio de formato.
         </p>
         {esDelEquipo && (
-          <pre className="mt-3 max-h-96 overflow-auto rounded bg-black/5 p-3 text-xs dark:bg-white/5">
+          <pre className="mt-3 max-h-96 overflow-auto rounded bg-black/30 p-3 text-xs ring-1 ring-white/10">
             {JSON.stringify(content, null, 2)}
           </pre>
         )}
