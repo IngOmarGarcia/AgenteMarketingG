@@ -6,7 +6,8 @@ import { revalidatePath } from "next/cache";
 import { OutcomeStatus, StrategyStatus } from "@prisma/client";
 import { z } from "zod";
 
-import { requireRole } from "@/lib/auth/dal";
+import { verifySession } from "@/lib/auth/dal";
+import { puedeRegistrarResultado } from "@/lib/auth/policy";
 import { prisma } from "@/lib/prisma";
 import {
   estrellasAScore,
@@ -22,6 +23,12 @@ import {
  * inyectar casos probados en las generaciones siguientes. Hasta ahora no había
  * forma de crear un `StrategyOutcome` desde la aplicación, así que esa memoria
  * estaba vacía.
+ *
+ * Acceso dual: el equipo de la agencia sobre cualquier empresa, y del lado del
+ * cliente solo el contacto principal sobre la suya. La regla vive en
+ * `puedeRegistrarResultado` y se comprueba AQUÍ, no solo escondiendo la
+ * interfaz: una Server Action es un endpoint POST alcanzable directamente, y
+ * esta es de las pocas que un CLIENTE puede ejecutar.
  */
 
 export type ResultadoAccion =
@@ -59,7 +66,7 @@ export async function registrarResultadoAction(
   _prev: ResultadoAccion | null,
   formData: FormData,
 ): Promise<ResultadoAccion> {
-  await requireRole("ADMIN", "COLABORADOR");
+  const session = await verifySession();
 
   const estrategia = await prisma.strategy.findUnique({
     where: { id: strategyId },
@@ -67,6 +74,14 @@ export async function registrarResultadoAction(
   });
 
   if (!estrategia) return { ok: false, mensaje: "Esa estrategia ya no existe." };
+
+  if (!puedeRegistrarResultado(session, estrategia)) {
+    return {
+      ok: false,
+      mensaje:
+        "No puedes registrar el resultado de esta estrategia. Solo el contacto principal de la empresa y el equipo de la agencia pueden hacerlo.",
+    };
+  }
 
   // Medir el resultado de algo que nadie aprobó ni ejecutó no significa nada, y
   // colarlo en la memoria contaminaría las generaciones siguientes.

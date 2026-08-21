@@ -3,7 +3,10 @@ import { notFound } from "next/navigation";
 import { StrategyStatus } from "@prisma/client";
 
 import { verifySession } from "@/lib/auth/dal";
-import { puedeVerEstrategia } from "@/lib/auth/policy";
+import {
+  puedeRegistrarResultado,
+  puedeVerEstrategia,
+} from "@/lib/auth/policy";
 import { prisma } from "@/lib/prisma";
 import { StrategyOutputSchema } from "@/modules/ai-core/schemas/strategy.schema";
 import {
@@ -60,6 +63,7 @@ export default async function EstrategiaPage({
   if (!puedeVerEstrategia(session, estrategia)) notFound();
 
   const esDelEquipo = session.role !== "CLIENTE";
+  const puedeMedir = puedeRegistrarResultado(session, estrategia);
 
   return (
     <article className="space-y-8">
@@ -124,7 +128,7 @@ export default async function EstrategiaPage({
 
       {/* El registro del resultado es la puerta de entrada a la memoria
           histórica, y solo tiene sentido sobre lo que se llegó a ejecutar. */}
-      {esDelEquipo && estrategia.status === StrategyStatus.APPROVED && (
+      {puedeMedir && estrategia.status === StrategyStatus.APPROVED && (
         <Link
           href={`/estrategias/${estrategia.id}/resultado`}
           className={claseTono(

@@ -5,7 +5,7 @@ import type { Role } from "@prisma/client";
 
 import {
   alternarActivoAction,
-  alternarPuedeInvitarAction,
+  alternarContactoPrincipalAction,
   cambiarRolAction,
   type AccionResultado,
 } from "@/modules/usuarios/actions";
@@ -24,7 +24,7 @@ export interface PerfilFila {
   role: Role;
   isActive: boolean;
   empresaNombre: string | null;
-  puedeInvitar: boolean;
+  esContactoPrincipal: boolean;
 }
 
 export function FilaUsuario({
@@ -49,7 +49,7 @@ export function FilaUsuario({
   const [estadoInvitar, accionInvitar, pendienteInvitar] = useActionState<
     AccionResultado | null,
     FormData
-  >(alternarPuedeInvitarAction, null);
+  >(alternarContactoPrincipalAction, null);
 
   const mensaje = estadoRol ?? estadoActivo ?? estadoInvitar;
 
@@ -73,7 +73,7 @@ export function FilaUsuario({
                 Tú
               </span>
             )}
-            {perfil.puedeInvitar && (
+            {perfil.esContactoPrincipal && (
               <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-medium ring-1 ring-emerald-400/40">
                 Puede invitar
               </span>
@@ -149,7 +149,7 @@ export function FilaUsuario({
                   disabled={pendienteInvitar}
                   className="rounded-md border border-white/30 px-2.5 py-1 text-sm hover:bg-white/15 disabled:opacity-50"
                 >
-                  {perfil.puedeInvitar
+                  {perfil.esContactoPrincipal
                     ? "Quitar alta de equipo"
                     : "Permitir alta de equipo"}
                 </button>

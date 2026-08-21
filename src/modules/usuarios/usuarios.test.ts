@@ -95,7 +95,7 @@ const ENTRADA = {
   role: "COLABORADOR" as const,
   clientId: null,
   fullName: undefined,
-  puedeInvitar: false,
+  esContactoPrincipal: false,
 };
 
 test("alta correcta usa el UUID de Supabase como id del Profile", async () => {
@@ -167,14 +167,14 @@ test("el schema del miembro descarta rol y empresa aunque lleguen", () => {
     email: "nuevo@empresa.com",
     role: "ADMIN",
     clientId: "empresa_ajena",
-    puedeInvitar: true,
+    esContactoPrincipal: true,
   });
 
   assert.equal(r.success, true);
   if (!r.success) return;
   assert.equal("role" in r.data, false);
   assert.equal("clientId" in r.data, false);
-  assert.equal("puedeInvitar" in r.data, false);
+  assert.equal("esContactoPrincipal" in r.data, false);
   assert.deepEqual(Object.keys(r.data).sort(), ["email"]);
 });
 
@@ -192,5 +192,5 @@ test("el servicio nunca concede el permiso por defecto", async () => {
   const { auth } = fakeAuth();
   await new UsuariosService(db, auth).invitar(ENTRADA, { redirectTo: "/x" });
 
-  assert.equal((creados[0] as { puedeInvitar: boolean }).puedeInvitar, false);
+  assert.equal((creados[0] as { esContactoPrincipal: boolean }).esContactoPrincipal, false);
 });

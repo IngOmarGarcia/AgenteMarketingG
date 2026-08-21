@@ -118,7 +118,7 @@ export class UsuariosService {
           role: input.role,
           clientId: input.clientId,
           // Nunca se hereda: quien no lo reciba explícitamente nace sin él.
-          puedeInvitar: input.puedeInvitar ?? false,
+          esContactoPrincipal: input.esContactoPrincipal ?? false,
         },
       });
     } catch (error) {

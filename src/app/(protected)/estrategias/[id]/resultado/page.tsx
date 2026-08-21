@@ -2,9 +2,17 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { StrategyStatus } from "@prisma/client";
 
-import { requireRole } from "@/lib/auth/dal";
+import { verifySession } from "@/lib/auth/dal";
+import {
+  puedeRegistrarResultado,
+  puedeVerEstrategia,
+} from "@/lib/auth/policy";
 import { prisma } from "@/lib/prisma";
-import { kpisATexto, scoreAEstrellas } from "@/modules/strategy/resultados";
+import {
+  formatearKpis,
+  kpisATexto,
+  scoreAEstrellas,
+} from "@/modules/strategy/resultados";
 import { claseTono } from "@/components/estado-estrategia";
 import {
   ResultadoForm,
@@ -12,10 +20,14 @@ import {
 } from "@/app/(protected)/estrategias/[id]/resultado/resultado-form";
 
 /**
- * Registro del resultado real de una estrategia.
+ * Resultado real de una estrategia. Acceso dual.
  *
- * Solo para el equipo: es la puerta de entrada a la memoria histórica, y lo que
- * se escriba aquí acabará dentro del prompt de otros clientes del mismo sector.
+ * El equipo de la agencia mide toda la cartera; del lado del cliente, solo el
+ * contacto principal. Quien puede ver la estrategia pero no registrar —un
+ * miembro que no es el principal— la ve en lectura.
+ *
+ * La puerta de entrada es `puedeVerEstrategia`, la misma del detalle: lo que no
+ * pasa responde `notFound()`, no un 403, porque un 403 confirmaría que existe.
  */
 export default async function ResultadoPage({
   params,
@@ -23,7 +35,7 @@ export default async function ResultadoPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  await requireRole("ADMIN", "COLABORADOR");
+  const session = await verifySession();
 
   const estrategia = await prisma.strategy.findUnique({
     where: { id },
@@ -32,6 +44,7 @@ export default async function ResultadoPage({
       title: true,
       status: true,
       sector: true,
+      clientId: true,
       client: { select: { name: true } },
       outcome: {
         select: {
@@ -46,6 +59,10 @@ export default async function ResultadoPage({
   });
 
   if (!estrategia) notFound();
+  if (!puedeVerEstrategia(session, estrategia)) notFound();
+
+  const puedeEditar = puedeRegistrarResultado(session, estrategia);
+  const o = estrategia.outcome;
 
   const cabecera = (
     <header>
@@ -77,7 +94,50 @@ export default async function ResultadoPage({
     );
   }
 
-  const o = estrategia.outcome;
+  // Lectura: puede abrir la estrategia, pero no firmar su resultado.
+  if (!puedeEditar) {
+    return (
+      <div className="space-y-6">
+        {cabecera}
+        <div className={claseTono("neutral", "rounded-lg p-6")}>
+          {o ? (
+            <>
+              <h2 className="text-lg font-medium">
+                {"★".repeat(scoreAEstrellas(o.performanceScore))}
+                <span className="ml-2 text-sm font-normal opacity-60">
+                  medido el {o.measuredAt.toLocaleDateString("es-ES")}
+                </span>
+              </h2>
+
+              {formatearKpis(o.metrics).length > 0 && (
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {formatearKpis(o.metrics).map((k) => (
+                    <li
+                      key={k}
+                      className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs ring-1 ring-white/20"
+                    >
+                      {k}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <p className="mt-4 text-sm opacity-90">{o.learnings}</p>
+            </>
+          ) : (
+            <p className="text-sm opacity-80">
+              Todavía no se ha registrado el resultado de esta estrategia.
+            </p>
+          )}
+
+          <p className="mt-5 border-t border-white/15 pt-4 text-xs opacity-60">
+            Solo el contacto principal de {estrategia.client.name} y el equipo de
+            la agencia pueden registrarlo o editarlo.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const valores: ValoresResultado = {
     estrellas: o ? scoreAEstrellas(o.performanceScore) : 4,

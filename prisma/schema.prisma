@@ -87,14 +87,20 @@ model Profile {
 
   isActive  Boolean  @default(true)
 
-  /// Solo significa algo en un CLIENTE: marca al miembro que puede dar de alta
-  /// a otros de SU MISMA empresa. Los que él crea nacen con `false`.
+  /// Solo significa algo en un CLIENTE: marca al CONTACTO PRINCIPAL de la
+  /// empresa. Le habilita dos cosas —dar de alta compañeros y registrar el
+  /// resultado real de las estrategias—, ambas por el mismo motivo: es quien
+  /// responde por la cuenta. Los miembros que él crea nacen con `false`.
+  ///
+  /// `@map` conserva el nombre original de la columna: el campo se renombró en
+  /// Prisma cuando pasó a gobernar dos permisos y no solo la invitación, pero
+  /// renombrar la columna habría sido mover datos sin ninguna necesidad.
   ///
   /// Es un booleano y no un rol nuevo a propósito: `puedeVerEstrategia`,
   /// `puedeGestionarTablero` y `puedeGenerarPara` usan `role !== "CLIENTE"`
   /// como sinónimo de "es del equipo", así que un rol intermedio atravesaría
   /// los tres y obtendría acceso de agencia sin que nada lo detectara.
-  puedeInvitar Boolean @default(false)
+  esContactoPrincipal Boolean @default(false) @map("puedeInvitar")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

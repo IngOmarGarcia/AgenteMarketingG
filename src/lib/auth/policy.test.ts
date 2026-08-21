@@ -11,6 +11,7 @@ import {
   puedeGenerarPara,
   puedeGestionarTablero,
   puedeInvitarMiembros,
+  puedeRegistrarResultado,
   puedeVerEstrategia,
   type ProfileSnapshot,
 } from "@/lib/auth/policy";
@@ -18,7 +19,7 @@ import {
 const ROLES: Role[] = ["ADMIN", "COLABORADOR", "CLIENTE"];
 
 function perfil(over: Partial<ProfileSnapshot> = {}): ProfileSnapshot {
-  return { role: "ADMIN", clientId: null, isActive: true, puedeInvitar: false, ...over };
+  return { role: "ADMIN", clientId: null, isActive: true, esContactoPrincipal: false, ...over };
 }
 
 test("cada rol entra en su propia ruta", () => {
@@ -198,11 +199,11 @@ test("un CLIENTE sin empresa no mueve nada", () => {
 
 test("solo un CLIENTE marcado puede invitar a su equipo", () => {
   assert.equal(
-    puedeInvitarMiembros(perfil({ role: "CLIENTE", clientId: "c1", puedeInvitar: true })),
+    puedeInvitarMiembros(perfil({ role: "CLIENTE", clientId: "c1", esContactoPrincipal: true })),
     true,
   );
   assert.equal(
-    puedeInvitarMiembros(perfil({ role: "CLIENTE", clientId: "c1", puedeInvitar: false })),
+    puedeInvitarMiembros(perfil({ role: "CLIENTE", clientId: "c1", esContactoPrincipal: false })),
     false,
   );
 });
@@ -212,7 +213,7 @@ test("el equipo de la agencia NO invita por esta vía", () => {
   // rol y empresa. Marcarle el booleano no debe abrirle esta puerta.
   for (const role of ["ADMIN", "COLABORADOR"] as const) {
     assert.equal(
-      puedeInvitarMiembros(perfil({ role, puedeInvitar: true })),
+      puedeInvitarMiembros(perfil({ role, esContactoPrincipal: true })),
       false,
       `${role} no debería invitar como si fuera un cliente`,
     );
@@ -222,7 +223,7 @@ test("el equipo de la agencia NO invita por esta vía", () => {
 test("un CLIENTE sin empresa no invita aunque esté marcado", () => {
   // No habría a qué empresa atar al invitado.
   assert.equal(
-    puedeInvitarMiembros(perfil({ role: "CLIENTE", clientId: null, puedeInvitar: true })),
+    puedeInvitarMiembros(perfil({ role: "CLIENTE", clientId: null, esContactoPrincipal: true })),
     false,
   );
 });
@@ -240,4 +241,48 @@ test("esMiembroDe distingue la empresa propia de la ajena", () => {
   assert.equal(esMiembroDe({ clientId: "c1" }, "c1"), true);
   assert.equal(esMiembroDe({ clientId: "c2" }, "c1"), false);
   assert.equal(esMiembroDe({ clientId: null }, "c1"), false);
+});
+
+// ── Registro del resultado real ───────────────────────────────────────────
+
+const ESTRATEGIA = { clientId: "cli_1" };
+
+test("el equipo registra resultados de cualquier empresa", () => {
+  for (const role of ["ADMIN", "COLABORADOR"] as const) {
+    assert.equal(
+      puedeRegistrarResultado(perfil({ role }), ESTRATEGIA),
+      true,
+      `${role} debería poder medir toda la cartera`,
+    );
+  }
+});
+
+test("el contacto principal registra los de SU empresa", () => {
+  const p = perfil({
+    role: "CLIENTE",
+    clientId: "cli_1",
+    esContactoPrincipal: true,
+  });
+  assert.equal(puedeRegistrarResultado(p, ESTRATEGIA), true);
+  assert.equal(puedeRegistrarResultado(p, { clientId: "cli_2" }), false);
+});
+
+test("un miembro que no es el contacto principal NO registra", () => {
+  // Lo que se escribe aquí acaba en el prompt de otra empresa del mismo sector:
+  // conviene que lo firme quien responde por la cuenta.
+  const p = perfil({
+    role: "CLIENTE",
+    clientId: "cli_1",
+    esContactoPrincipal: false,
+  });
+  assert.equal(puedeRegistrarResultado(p, ESTRATEGIA), false);
+});
+
+test("un CLIENTE sin empresa no registra nada", () => {
+  const p = perfil({
+    role: "CLIENTE",
+    clientId: null,
+    esContactoPrincipal: true,
+  });
+  assert.equal(puedeRegistrarResultado(p, ESTRATEGIA), false);
 });

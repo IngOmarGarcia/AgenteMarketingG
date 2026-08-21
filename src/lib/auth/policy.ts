@@ -16,7 +16,7 @@ export interface ProfileSnapshot {
   readonly clientId: string | null;
   readonly isActive: boolean;
   /** Solo significa algo en un CLIENTE. Ver `puedeInvitarMiembros`. */
-  readonly puedeInvitar: boolean;
+  readonly esContactoPrincipal: boolean;
 }
 
 export type AccessDecision =
@@ -25,7 +25,7 @@ export type AccessDecision =
       readonly type: "allow";
       readonly role: Role;
       readonly clientId: string | null;
-      readonly puedeInvitar: boolean;
+      readonly esContactoPrincipal: boolean;
     }
   /** Autenticado pero en la ruta equivocada → a su propio dashboard. */
   | { readonly type: "redirect"; readonly to: string }
@@ -80,7 +80,7 @@ export function decideAccess(
     type: "allow",
     role: profile.role,
     clientId: profile.clientId,
-    puedeInvitar: profile.puedeInvitar,
+    esContactoPrincipal: profile.esContactoPrincipal,
   };
 }
 
@@ -174,11 +174,11 @@ export function puedeGestionarTablero(
  *    sola por toda la empresa.
  */
 export function puedeInvitarMiembros(
-  profile: Pick<ProfileSnapshot, "role" | "clientId" | "puedeInvitar">,
+  profile: Pick<ProfileSnapshot, "role" | "clientId" | "esContactoPrincipal">,
 ): boolean {
   if (profile.role !== "CLIENTE") return false;
   if (profile.clientId === null) return false;
-  return profile.puedeInvitar;
+  return profile.esContactoPrincipal;
 }
 
 /**
@@ -193,4 +193,26 @@ export function esMiembroDe(
   clientId: string,
 ): boolean {
   return profile.clientId === clientId;
+}
+
+/**
+ * Quién puede registrar o editar el resultado real de una estrategia.
+ *
+ * Acceso dual, con alcances distintos:
+ *  - ADMIN y COLABORADOR: cualquier estrategia de cualquier empresa. Es su
+ *    trabajo medir la cartera entera.
+ *  - CLIENTE: solo el CONTACTO PRINCIPAL, y solo en su propia empresa.
+ *
+ * Se limita al contacto principal y no a cualquier miembro por lo que hay al
+ * otro lado: lo que se escribe aquí acaba dentro del prompt que genera la
+ * estrategia de OTRA empresa del mismo sector, potencialmente un competidor.
+ * Conviene que lo firme quien responde por la cuenta.
+ */
+export function puedeRegistrarResultado(
+  profile: Pick<ProfileSnapshot, "role" | "clientId" | "esContactoPrincipal">,
+  estrategia: { clientId: string },
+): boolean {
+  if (profile.role !== "CLIENTE") return true;
+  if (!profile.esContactoPrincipal) return false;
+  return profile.clientId === estrategia.clientId;
 }

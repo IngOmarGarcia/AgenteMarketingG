@@ -17,7 +17,7 @@ export const InvitarUsuarioSchema = z
     role: RoleSchema,
     clientId: z.string().trim().min(1).nullable().default(null),
     /** Solo tiene efecto en un CLIENTE. Ver `puedeInvitarMiembros`. */
-    puedeInvitar: z.boolean().default(false),
+    esContactoPrincipal: z.boolean().default(false),
   })
   .superRefine((val, ctx) => {
     if (val.role === "CLIENTE" && val.clientId === null) {

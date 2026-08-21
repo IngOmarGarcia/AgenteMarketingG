@@ -65,7 +65,7 @@ export async function invitarUsuarioAction(
     fullName: String(formData.get("fullName") ?? "").trim() || undefined,
     role: formData.get("role"),
     clientId: clientIdCrudo === "" ? null : clientIdCrudo,
-    puedeInvitar: formData.get("puedeInvitar") === "on",
+    esContactoPrincipal: formData.get("esContactoPrincipal") === "on",
   });
 
   if (!parsed.success) {
@@ -162,7 +162,7 @@ export async function alternarActivoAction(
  * `role` y `clientId` NO se leen del formulario. Salen de la sesión, y por eso
  * no hay ninguna ruta por la que quien invita pueda influir en ellos: ni
  * ascender a nadie a ADMIN, ni colgar un usuario de otra empresa. Lo mismo con
- * `puedeInvitar`, fijado a false en duro para que la delegación no se propague
+ * `esContactoPrincipal`, fijado a false en duro para que la delegación no se propague
  * sola por toda la empresa.
  */
 export async function invitarMiembroAction(
@@ -200,7 +200,7 @@ export async function invitarMiembroAction(
       fullName: parsed.data.fullName,
       role: "CLIENTE",
       clientId: session.clientId,
-      puedeInvitar: false,
+      esContactoPrincipal: false,
     },
     { redirectTo },
   );
@@ -224,7 +224,7 @@ export async function invitarMiembroAction(
  * quedarían sin forma de conseguirlo: la casilla del alta solo sirve para los
  * nuevos.
  */
-export async function alternarPuedeInvitarAction(
+export async function alternarContactoPrincipalAction(
   _prev: AccionResultado | null,
   formData: FormData,
 ): Promise<AccionResultado> {
@@ -235,7 +235,7 @@ export async function alternarPuedeInvitarAction(
 
   const perfil = await prisma.profile.findUnique({
     where: { id: profileId },
-    select: { role: true, clientId: true, puedeInvitar: true },
+    select: { role: true, clientId: true, esContactoPrincipal: true },
   });
   if (!perfil) return { ok: false, mensaje: "El usuario no existe." };
 
@@ -258,13 +258,13 @@ export async function alternarPuedeInvitarAction(
 
   await prisma.profile.update({
     where: { id: profileId },
-    data: { puedeInvitar: !perfil.puedeInvitar },
+    data: { esContactoPrincipal: !perfil.esContactoPrincipal },
   });
 
   revalidatePath("/admin/usuarios");
   return {
     ok: true,
-    mensaje: perfil.puedeInvitar
+    mensaje: perfil.esContactoPrincipal
       ? "Ya no puede dar de alta compañeros."
       : "Ahora puede dar de alta compañeros de su empresa.",
   };

@@ -38,13 +38,13 @@ export default async function EquipoPage() {
         email: true,
         fullName: true,
         isActive: true,
-        puedeInvitar: true,
+        esContactoPrincipal: true,
       },
-      orderBy: [{ puedeInvitar: "desc" }, { email: "asc" }],
+      orderBy: [{ esContactoPrincipal: "desc" }, { email: "asc" }],
     }),
   ]);
 
-  const puedeInvitar = puedeInvitarMiembros(session);
+  const esContactoPrincipal = puedeInvitarMiembros(session);
 
   return (
     <div className="space-y-8">
@@ -81,7 +81,7 @@ export default async function EquipoPage() {
                       </span>
                     )}
 
-                    {m.puedeInvitar && (
+                    {m.esContactoPrincipal && (
                       <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-medium ring-1 ring-emerald-400/40">
                         Puede invitar
                       </span>
@@ -102,7 +102,7 @@ export default async function EquipoPage() {
         </ul>
       </section>
 
-      {puedeInvitar ? (
+      {esContactoPrincipal ? (
         <section className={claseTono("neutral", "rounded-lg p-6")}>
           <h2 className="text-lg font-medium">Invitar a un compañero</h2>
           <p className="mt-1 text-sm opacity-70">
