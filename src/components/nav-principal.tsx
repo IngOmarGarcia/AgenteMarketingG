@@ -40,12 +40,17 @@ export function NavPrincipal({ email, role }: { email: string; role: Role }) {
         {/* Contenedor Izquierdo: Logo + Enlaces */}
         <div className="flex items-center gap-6">
           <Link href={rutaInicio} className="flex items-center gap-2 transition-opacity hover:opacity-80">
+            {/* Las dimensiones INTRÍNSECAS del fichero (342x340), no las que se
+                quieren en pantalla. Next las usa para reservar el hueco antes
+                de que la imagen cargue: con una proporción falsa aparta una
+                caja de otra forma y luego la encoge, empujando los enlaces del
+                menú. El tamaño real lo decide el CSS de abajo. */}
             <Image
               src="/gravita.png"
-              alt="Gravita Logo"
-              width={120}
-              height={48}
-              className="h-12 w-auto object-contain"
+              alt="Gravita"
+              width={342}
+              height={340}
+              className="h-12 w-auto"
               priority
             />
           </Link>
