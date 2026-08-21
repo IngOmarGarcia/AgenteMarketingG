@@ -35,7 +35,10 @@ export function NavPrincipal({ email, role }: { email: string; role: Role }) {
       {/* Mismo ancho y mismo padding que el <main> del layout: si la cabecera y
           el contenido no comparten la caja, los enlaces quedan desalineados con
           los títulos de debajo y se nota. */}
-      <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+      {/* Altura fija en vez de padding vertical: así la barra deja de medir lo
+          que mida el logo y pasa a ser al revés, que es lo que permite que el
+          logo la llene sin que la cabecera crezca con él. */}
+      <div className="mx-auto flex h-20 w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         
         {/* Contenedor Izquierdo: Logo + Enlaces */}
         <div className="flex items-center gap-6">
@@ -50,7 +53,10 @@ export function NavPrincipal({ email, role }: { email: string; role: Role }) {
               alt="Gravita"
               width={342}
               height={340}
-              className="h-12 w-auto"
+              // h-16 dentro de una barra de h-20: llena la altura dejando un
+              // respiro arriba y abajo. Pegado a los bordes se leería como un
+              // error de maquetación, no como un logo grande.
+              className="h-16 w-auto"
               priority
             />
           </Link>
