@@ -222,11 +222,30 @@ model StrategyOutcome {
   /// luego cambiar el texto.
   revisado Boolean @default(false)
 
+  /// Interruptor editorial: ¿queremos que este caso influya en lo que la IA
+  /// genera para otros clientes?
+  ///
+  /// Distinto de `revisado`, y por eso son dos campos y no uno. `revisado`
+  /// responde "¿ha mirado alguien del equipo este texto?" —es una barrera de
+  /// seguridad—. Este responde "¿queremos que enseñe?" —es una decisión de
+  /// criterio—. Un caso puede estar revisado y ser correcto, y aun así no
+  /// convenir como referencia: un cliente atípico, un mercado que ya cambió, una
+  /// táctica que dejó de ser legal.
+  ///
+  /// Por defecto `true`: el sistema aprende salvo que alguien decida lo
+  /// contrario. Con el defecto invertido, la memoria volvería a quedarse vacía
+  /// hasta que alguien fuera marcando casos uno a uno, que es exactamente el
+  /// problema del que veníamos.
+  ///
+  /// NO afecta a lo que ve el cliente. Su panel depende solo del estado de la
+  /// estrategia; apagar esto la retira del contexto de la IA y de nada más.
+  usarEnMemoriaIA Boolean @default(true)
+
   strategy Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
 
-  /// `revisado` entra como igualdad junto a `sector` y `status`, antes del
-  /// rango sobre `performanceScore`: así sigue siendo un prefijo del índice y
-  /// Postgres resuelve filtro y orden con un solo index scan.
-  @@index([sector, status, revisado, performanceScore(sort: Desc)])
+  /// Las cuatro igualdades —`sector`, `status`, `revisado` y `usarEnMemoriaIA`—
+  /// van antes del rango sobre `performanceScore`: así siguen siendo prefijo del
+  /// índice y Postgres resuelve filtro y orden con un solo index scan.
+  @@index([sector, status, revisado, usarEnMemoriaIA, performanceScore(sort: Desc)])
   @@index([measuredAt(sort: Desc)])
 }

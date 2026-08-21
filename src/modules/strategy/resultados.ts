@@ -1,4 +1,4 @@
-import type { Role } from "@prisma/client";
+import type { OutcomeStatus, Role } from "@prisma/client";
 
 /**
  * Lógica pura del registro de resultados.
@@ -150,4 +150,37 @@ export function formatearKpis(metrics: unknown): string[] {
  */
 export function revisadoTrasEscritura(role: Role): boolean {
   return role !== "CLIENTE";
+}
+
+/** Lo mínimo de un resultado para decidir si alimenta a la IA. */
+export interface EstadoMemoria {
+  readonly revisado: boolean;
+  readonly usarEnMemoriaIA: boolean;
+  readonly status: OutcomeStatus;
+  readonly performanceScore: number;
+}
+
+/**
+ * Si un resultado alimenta la memoria que lee la IA.
+ *
+ * Las cuatro condiciones responden a preguntas distintas, y por eso son cuatro:
+ *
+ *  - `revisado`: ¿lo ha mirado alguien del equipo? Barrera de seguridad, porque
+ *    el cliente puede escribir ese texto y acaba en el prompt de otra empresa.
+ *  - `usarEnMemoriaIA`: ¿queremos que enseñe? Decisión de criterio. Un caso
+ *    puede ser correcto y aun así no convenir como referencia.
+ *  - `SUCCESS` y el umbral de score: ¿tiene algo que enseñar? Por debajo, el
+ *    "aprendizaje" es ruido.
+ *
+ * Existe como función y no repetida en cada sitio porque la condición se usa en
+ * tres: la consulta de BrainService, la vista del panel y el distintivo de cada
+ * tarjeta. Tres copias acabarían diciendo cosas distintas sobre lo mismo.
+ */
+export function alimentaLaMemoria(outcome: EstadoMemoria): boolean {
+  return (
+    outcome.revisado &&
+    outcome.usarEnMemoriaIA &&
+    outcome.status === "SUCCESS" &&
+    outcome.performanceScore >= SCORE_MINIMO_MEMORIA
+  );
 }

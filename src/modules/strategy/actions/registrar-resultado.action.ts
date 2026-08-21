@@ -195,3 +195,54 @@ export async function marcarResultadoRevisadoAction(
     mensaje: "Revisado. Este caso ya puede alimentar las próximas generaciones.",
   };
 }
+
+/**
+ * Enciende o apaga si un caso alimenta el contexto de la IA.
+ *
+ * Solo ADMIN y COLABORADOR: es una decisión editorial sobre qué enseña el
+ * sistema a otros clientes, no sobre el trabajo de uno.
+ *
+ * NO toca nada de lo que ve el cliente. Su panel depende del estado de la
+ * estrategia y su resultado sigue ahí igual: apagar esto lo retira del prompt y
+ * de nada más. Esa separación es justamente el motivo de que este interruptor
+ * exista aparte de `revisado`.
+ */
+export async function alternarUsoEnMemoriaAction(
+  strategyId: string,
+): Promise<ResultadoAccion> {
+  await requireRole("ADMIN", "COLABORADOR");
+
+  const actual = await prisma.strategyOutcome.findUnique({
+    where: { strategyId },
+    select: { usarEnMemoriaIA: true, revisado: true },
+  });
+
+  if (!actual) {
+    return { ok: false, mensaje: "Esta estrategia no tiene resultado registrado." };
+  }
+
+  const encender = !actual.usarEnMemoriaIA;
+
+  await prisma.strategyOutcome.update({
+    where: { strategyId },
+    data: { usarEnMemoriaIA: encender },
+  });
+
+  revalidatePath(`/estrategias/${strategyId}/resultado`);
+  revalidatePath("/colaborador");
+
+  if (!encender) {
+    return {
+      ok: true,
+      mensaje:
+        "Retirado del contexto de la IA. El cliente sigue viendo su estrategia y su resultado igual que antes.",
+    };
+  }
+
+  return {
+    ok: true,
+    mensaje: actual.revisado
+      ? "Encendido: este caso vuelve a alimentar las próximas generaciones."
+      : "Encendido, pero todavía falta revisarlo para que entre en la memoria.",
+  };
+}

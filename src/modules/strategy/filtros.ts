@@ -237,6 +237,7 @@ export function whereDeVista(vista: VistaColaborador): Prisma.StrategyWhereInput
         outcome: {
           is: {
             revisado: true,
+            usarEnMemoriaIA: true,
             status: OutcomeStatus.SUCCESS,
             performanceScore: { gte: SCORE_MINIMO_MEMORIA },
           },

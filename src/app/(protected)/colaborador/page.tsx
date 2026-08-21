@@ -17,7 +17,10 @@ import {
   type VistaColaborador,
 } from "@/modules/strategy/filtros";
 import { puedeEliminarse } from "@/modules/strategy/transiciones";
-import { scoreAEstrellas } from "@/modules/strategy/resultados";
+import {
+  alimentaLaMemoria,
+  scoreAEstrellas,
+} from "@/modules/strategy/resultados";
 import {
   FiltroPeriodo,
   Paginacion,
@@ -65,7 +68,12 @@ export default async function ColaboradorPage({
         createdAt: true,
         client: { select: { name: true, sector: true } },
         outcome: {
-          select: { performanceScore: true, revisado: true, status: true },
+          select: {
+            performanceScore: true,
+            revisado: true,
+            usarEnMemoriaIA: true,
+            status: true,
+          },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -178,16 +186,22 @@ export default async function ColaboradorPage({
                       <span className="rounded-full bg-white/10 px-2 py-0.5 ring-1 ring-white/20">
                         {"★".repeat(scoreAEstrellas(e.outcome.performanceScore))}
                       </span>
-                      {e.outcome.revisado ? (
-                        <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 font-medium ring-1 ring-emerald-400/40">
-                          {e.outcome.status === "SUCCESS" &&
-                          e.outcome.performanceScore >= 70
-                            ? "En memoria de la IA"
-                            : "Revisado"}
-                        </span>
-                      ) : (
+                      {!e.outcome.revisado ? (
                         <span className="rounded-full bg-amber-500/20 px-2 py-0.5 font-medium ring-1 ring-amber-400/40">
                           Por revisar
+                        </span>
+                      ) : alimentaLaMemoria(e.outcome) ? (
+                        <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 font-medium ring-1 ring-emerald-400/40">
+                          En memoria de la IA
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-white/10 px-2 py-0.5 ring-1 ring-white/20">
+                          {/* Distingue "el equipo lo retiró" de "no llega al
+                              umbral": son decisiones distintas y quien mira el
+                              panel necesita saber cuál de las dos fue. */}
+                          {e.outcome.usarEnMemoriaIA
+                            ? "Revisado"
+                            : "Fuera de la IA"}
                         </span>
                       )}
                     </>

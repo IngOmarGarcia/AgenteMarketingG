@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  alimentaLaMemoria,
   estrellasAScore,
+  SCORE_MINIMO_MEMORIA,
   revisadoTrasEscritura,
   formatearKpis,
   MAX_KPI_CHARS,
@@ -141,4 +143,54 @@ test("una edición del cliente devuelve el caso a sin revisar", () => {
   // La función no recibe el estado anterior a propósito: el resultado depende
   // SOLO de quién escribe, así que no hay forma de conservar un `true` viejo.
   assert.equal(revisadoTrasEscritura("CLIENTE"), false);
+});
+
+// ── Qué alimenta la memoria de la IA ──────────────────────────────────────
+
+const EN_MEMORIA = {
+  revisado: true,
+  usarEnMemoriaIA: true,
+  status: "SUCCESS" as const,
+  performanceScore: 100,
+};
+
+test("un caso revisado, encendido y bueno alimenta la memoria", () => {
+  assert.equal(alimentaLaMemoria(EN_MEMORIA), true);
+});
+
+test("cada una de las cuatro condiciones basta para dejarlo fuera", () => {
+  const fuera = [
+    { ...EN_MEMORIA, revisado: false },
+    { ...EN_MEMORIA, usarEnMemoriaIA: false },
+    { ...EN_MEMORIA, status: "NEUTRAL" as const },
+    { ...EN_MEMORIA, performanceScore: SCORE_MINIMO_MEMORIA - 1 },
+  ];
+  for (const o of fuera) {
+    assert.equal(alimentaLaMemoria(o), false, JSON.stringify(o));
+  }
+});
+
+test("apagar el interruptor NO depende de la calificación", () => {
+  // Es el desacople que pedía el requisito: un caso excelente y revisado puede
+  // retirarse del contexto de la IA por criterio, sin bajarle las estrellas ni
+  // tocar nada de lo que ve el cliente.
+  assert.equal(
+    alimentaLaMemoria({ ...EN_MEMORIA, usarEnMemoriaIA: false }),
+    false,
+  );
+});
+
+test("el interruptor por sí solo no mete nada en la memoria", () => {
+  // Encenderlo sobre un caso sin revisar no salta la barrera de seguridad.
+  assert.equal(
+    alimentaLaMemoria({ ...EN_MEMORIA, revisado: false, usarEnMemoriaIA: true }),
+    false,
+  );
+});
+
+test("justo en el umbral entra", () => {
+  assert.equal(
+    alimentaLaMemoria({ ...EN_MEMORIA, performanceScore: SCORE_MINIMO_MEMORIA }),
+    true,
+  );
 });

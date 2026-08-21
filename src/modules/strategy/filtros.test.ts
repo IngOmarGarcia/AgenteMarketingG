@@ -214,13 +214,14 @@ test("'por-revisar' son los resultados que esperan el visto bueno", () => {
   });
 });
 
-test("'en-memoria' replica las tres condiciones de BrainService", () => {
+test("'en-memoria' replica las cuatro condiciones de BrainService", () => {
   // Si esta vista y la consulta de la memoria divergen, el panel mentiría sobre
   // qué está alimentando a la IA.
   assert.deepEqual(whereDeVista("en-memoria"), {
     outcome: {
       is: {
         revisado: true,
+        usarEnMemoriaIA: true,
         status: "SUCCESS",
         performanceScore: { gte: SCORE_MINIMO_MEMORIA },
       },

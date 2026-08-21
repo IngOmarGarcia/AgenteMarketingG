@@ -67,7 +67,8 @@ export class BrainService {
    * Está diseñada alrededor del índice
    * `StrategyOutcome(sector, status, performanceScore DESC)`:
    *
-   *  - `sector`, `status` y `revisado` son igualdades → prefijo del índice.
+   *  - `sector`, `status`, `revisado` y `usarEnMemoriaIA` son igualdades →
+   *    prefijo del índice.
    *  - `performanceScore` es un rango + ORDER BY DESC → sufijo del índice,
    *    así Postgres resuelve el orden con el propio index scan y NO añade
    *    un nodo Sort.
@@ -112,6 +113,9 @@ export class BrainService {
           // este filtro, cualquiera podría colocar instrucciones dirigidas al
           // modelo en el contexto de un competidor de su sector.
           revisado: true,
+          // Interruptor editorial, distinto de la revisión: el equipo puede
+          // retirar un caso del contexto de la IA sin que el cliente note nada.
+          usarEnMemoriaIA: true,
           performanceScore: { gte: minScore },
           ...(params.excludeClientId
             ? { strategy: { clientId: { not: params.excludeClientId } } }
@@ -196,6 +200,7 @@ export class BrainService {
           -- Misma barrera que en la consulta de arriba. Las dos variantes deben
           -- filtrar igual o una de ellas se convertiría en la puerta trasera.
           AND o."revisado" = true
+          AND o."usarEnMemoriaIA" = true
           AND o."performanceScore" >= ${minScore}
           AND (${params.excludeClientId ?? null}::text IS NULL
                OR s."clientId" <> ${params.excludeClientId ?? null}::text)

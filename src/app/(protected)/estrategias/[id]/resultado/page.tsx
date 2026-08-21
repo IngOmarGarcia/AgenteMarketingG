@@ -9,6 +9,7 @@ import {
 } from "@/lib/auth/policy";
 import { prisma } from "@/lib/prisma";
 import {
+  alimentaLaMemoria,
   formatearKpis,
   kpisATexto,
   scoreAEstrellas,
@@ -19,6 +20,7 @@ import {
   type ValoresResultado,
 } from "@/app/(protected)/estrategias/[id]/resultado/resultado-form";
 import { RevisarBoton } from "@/app/(protected)/estrategias/[id]/resultado/revisar-boton";
+import { MemoriaBoton } from "@/app/(protected)/estrategias/[id]/resultado/memoria-boton";
 
 /**
  * Resultado real de una estrategia. Acceso dual.
@@ -55,6 +57,7 @@ export default async function ResultadoPage({
           metrics: true,
           measuredAt: true,
           revisado: true,
+          usarEnMemoriaIA: true,
         },
       },
     },
@@ -127,12 +130,13 @@ export default async function ResultadoPage({
 
               <p className="mt-4 text-sm opacity-90">{o.learnings}</p>
 
-              {!o.revisado && (
-                <p className="mt-3 text-xs opacity-60">
-                  Pendiente de revisión por la agencia: todavía no alimenta a
-                  la IA.
-                </p>
-              )}
+              <p className="mt-3 text-xs opacity-60">
+                {alimentaLaMemoria(o)
+                  ? "Este caso alimenta a la IA en futuras estrategias del sector."
+                  : o.revisado
+                    ? "Revisado. No se está usando como referencia para la IA."
+                    : "Pendiente de revisión por la agencia: todavía no alimenta a la IA."}
+              </p>
             </>
           ) : (
             <p className="text-sm opacity-80">
@@ -189,12 +193,41 @@ export default async function ResultadoPage({
         )}
 
         {o?.revisado && (
-          <p className="mb-5 text-sm opacity-70">
-            Revisado: este caso ya puede alimentar las próximas generaciones de
-            su sector.{" "}
-            {!esDelEquipo &&
-              "Si editas algo, volverá a quedar pendiente de revisión."}
-          </p>
+          <div className={claseTono("neutral", "mb-5 rounded-lg p-4")}>
+            <p className="text-sm font-medium">
+              {alimentaLaMemoria(o)
+                ? "Este caso alimenta a la IA"
+                : "Este caso NO alimenta a la IA"}
+            </p>
+
+            <p className="mt-1 text-sm opacity-80">
+              {alimentaLaMemoria(o)
+                ? "Se inyecta como evidencia al generar estrategias de otras empresas del mismo sector."
+                : o.usarEnMemoriaIA
+                  ? "Está revisado, pero no llega al umbral: la memoria solo usa casos de éxito de 4 estrellas o más."
+                  : "El equipo lo ha retirado del contexto de la IA. El cliente lo sigue viendo con normalidad."}
+            </p>
+
+            {/* Solo el equipo, y solo si el caso califica: ofrecer el
+                interruptor sobre un caso de 2 estrellas prometería un efecto
+                que el umbral va a negar igualmente. */}
+            {esDelEquipo &&
+              o.status === "SUCCESS" &&
+              o.performanceScore >= 70 && (
+                <div className="mt-3">
+                  <MemoriaBoton
+                    strategyId={estrategia.id}
+                    encendido={o.usarEnMemoriaIA}
+                  />
+                </div>
+              )}
+
+            {!esDelEquipo && (
+              <p className="mt-2 text-xs opacity-60">
+                Si editas algo, volverá a quedar pendiente de revisión.
+              </p>
+            )}
+          </div>
         )}
 
         <ResultadoForm
