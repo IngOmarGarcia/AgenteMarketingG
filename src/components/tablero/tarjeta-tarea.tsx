@@ -22,8 +22,14 @@ const COLOR_ORIGEN: Readonly<Record<TareaOrigen, string>> = {
   MANUAL: "bg-white/15 ring-white/25",
 };
 
-const CAMPO =
-  "w-full rounded-md border border-white/25 bg-white/70 px-2 py-1 text-sm text-zinc-900 outline-none focus:border-[var(--primary)] dark:bg-white/10 dark:text-zinc-50";
+/**
+ * La clase compartida de globals.css, no clases sueltas.
+ *
+ * Importa especialmente por el `<select>`: `.field option` fija fondo y color
+ * del desplegable, que lo dibuja el sistema operativo y no hereda nada de la
+ * página. Sin ella las opciones salen en blanco sobre blanco.
+ */
+const CAMPO = "field w-full rounded-md px-2 py-1 text-sm";
 
 export function TarjetaTarea({
   tarea,

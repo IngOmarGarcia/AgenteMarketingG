@@ -18,8 +18,8 @@ export function NuevaTarjeta({
   const [titulo, setTitulo] = useState("");
   const [detalle, setDetalle] = useState("");
 
-  const campo =
-    "w-full rounded-md border border-white/25 bg-white/70 px-2 py-1 text-sm text-zinc-900 outline-none focus:border-[var(--primary)] dark:bg-white/10 dark:text-zinc-50";
+  // La clase compartida de globals.css, igual que el resto del sistema.
+  const campo = "field w-full rounded-md px-2 py-1 text-sm";
 
   if (!abierto) {
     return (
