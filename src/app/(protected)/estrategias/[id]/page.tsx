@@ -14,11 +14,11 @@ import {
   puedeDesaprobarse,
 } from "@/modules/strategy/transiciones";
 import { EstrategiaVista } from "@/components/estrategia-vista";
-import { claseTono } from "@/components/estado-estrategia";
 import {
   AprobarBoton,
   DesaprobarBoton,
 } from "@/app/(protected)/estrategias/[id]/aprobar-boton";
+import { AccionRapida } from "@/components/accion-rapida";
 
 /**
  * Detalle de una estrategia. Abierta a los tres roles: quién ve qué lo decide
@@ -87,75 +87,54 @@ export default async function EstrategiaPage({
         </p>
       </header>
 
-      {/* La aprobación va en el detalle y no en una lista a propósito: aprobar
-          significa "la he leído y respondo por ella", y un botón junto a un
-          título en una tabla invita a darle sin haberla abierto.
+      {/* Barra de acciones rápidas.
 
-          Solo se pinta si la transición es legal. El servidor la comprueba
-          igualmente: esto evita ofrecer un clic que va a fallar, no es la
-          frontera. */}
-      {/* El tablero solo existe sobre una estrategia aprobada, así que el
-          enlace tampoco aparece antes: ofrecerlo llevaría a un aviso. */}
-      {estrategia.status === StrategyStatus.APPROVED && (
-        <Link
-          href={`/estrategias/${estrategia.id}/tablero`}
-          className={claseTono(
-            "info",
-            "flex flex-wrap items-center justify-between gap-2 rounded-lg p-5",
-          )}
-        >
-          <div>
-            <h2 className="font-medium">Plan de ejecución</h2>
-            <p className="mt-1 text-sm opacity-80">
-              Las acciones de esta estrategia, en un tablero para seguir por
-              dónde va cada una.
-            </p>
-          </div>
-          <span className="text-sm font-medium">Abrir el tablero →</span>
-        </Link>
-      )}
+          `flex-wrap` con anchos naturales: cuando una acción no aplica —un
+          cliente no publica, una estrategia sin aprobar no tiene tablero— el
+          hueco se cierra solo y las que quedan siguen alineadas. Sin columnas
+          fijas no hay huecos que rellenar.
 
-      {esDelEquipo && puedeAprobarse(estrategia.status).permitida && (
-        <section className={claseTono("ok", "rounded-lg p-5")}>
-          <h2 className="font-medium">¿Damos esta estrategia por buena?</h2>
-          <p className="mt-1 mb-4 text-sm opacity-80">
-            El cliente todavía NO puede verla. Aprobarla es lo que se la publica,
-            y la suma al contador de aprobadas del panel.
-          </p>
+          Las acciones destructivas o consecuentes van al final, para que el
+          gesto por defecto no sea el irreversible. */}
+      <div className="flex flex-wrap items-start gap-3">
+        {estrategia.status === StrategyStatus.APPROVED && (
+          <AccionRapida
+            href={`/estrategias/${estrategia.id}/tablero`}
+            icono="tablero"
+            titulo="Las acciones de esta estrategia en un tablero, para seguir por dónde va cada una"
+          >
+            Seguimiento de Estrategia
+          </AccionRapida>
+        )}
+
+        {puedeMedir && estrategia.status === StrategyStatus.APPROVED && (
+          <AccionRapida
+            href={`/estrategias/${estrategia.id}/resultado`}
+            icono="resultado"
+            titulo="Registra los KPIs alcanzados y lo aprendido: los casos de éxito alimentan las próximas generaciones"
+          >
+            Calificar Estrategia
+          </AccionRapida>
+        )}
+
+        {esDelEquipo && puedeAprobarse(estrategia.status).permitida && (
           <AprobarBoton estrategiaId={estrategia.id} />
-        </section>
-      )}
+        )}
 
-      {/* El registro del resultado es la puerta de entrada a la memoria
-          histórica, y solo tiene sentido sobre lo que se llegó a ejecutar. */}
-      {puedeMedir && estrategia.status === StrategyStatus.APPROVED && (
-        <Link
-          href={`/estrategias/${estrategia.id}/resultado`}
-          className={claseTono(
-            "neutral",
-            "flex flex-wrap items-center justify-between gap-2 rounded-lg p-5",
-          )}
-        >
-          <div>
-            <h2 className="font-medium">Resultado real</h2>
-            <p className="mt-1 text-sm opacity-80">
-              Registra los KPIs alcanzados y lo aprendido. Los casos de éxito
-              alimentan las próximas generaciones de este sector.
-            </p>
-          </div>
-          <span className="text-sm font-medium">Registrar →</span>
-        </Link>
-      )}
-
-      {esDelEquipo && puedeDesaprobarse(estrategia.status).permitida && (
-        <section className={claseTono("neutral", "rounded-lg p-5")}>
-          <h2 className="font-medium">Publicada para el cliente</h2>
-          <p className="mt-1 mb-4 text-sm opacity-80">
-            Retirar la aprobación la devuelve a revisión y deja de verla el
-            cliente al instante. No borra nada: el contenido se queda como está.
-          </p>
+        {esDelEquipo && puedeDesaprobarse(estrategia.status).permitida && (
           <DesaprobarBoton estrategiaId={estrategia.id} />
-        </section>
+        )}
+      </div>
+
+      {/* La advertencia que antes vivía dentro del bloque de aprobar. Se queda
+          como una línea suelta y no dentro del botón: publicar es lo que se la
+          enseña al cliente, y esa consecuencia no debería descubrirse después
+          de haber pulsado. */}
+      {esDelEquipo && puedeAprobarse(estrategia.status).permitida && (
+        <p className="-mt-4 text-sm opacity-70">
+          El cliente todavía no ve esta estrategia. Publicarla es lo que se la
+          enseña.
+        </p>
       )}
 
       <Cuerpo
