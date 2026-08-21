@@ -4,7 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { err, ok, type Result } from "@/lib/result";
 import type { HistoricalMemoryEntry } from "@/modules/ai-core/schemas/input.schema";
 import { BrainServiceError } from "@/modules/strategy/errors";
-import { formatearKpis } from "@/modules/strategy/resultados";
+import {
+  formatearKpis,
+  SCORE_MINIMO_MEMORIA,
+} from "@/modules/strategy/resultados";
 
 /**
  * Límites duros del bloque de memoria.
@@ -19,7 +22,7 @@ const BRAIN_LIMITS = {
   maxSummaryChars: 600,
   maxLearningsChars: 800,
   /** Por debajo de este score el "aprendizaje" es ruido, no señal. */
-  minPerformanceScore: 70,
+  minPerformanceScore: SCORE_MINIMO_MEMORIA,
 } as const;
 
 export interface HistoricalMemoryParams {

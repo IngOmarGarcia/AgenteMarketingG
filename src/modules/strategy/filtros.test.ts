@@ -10,8 +10,13 @@ import {
   PARAM_ESTADO,
   PARAM_PAGINA,
   PARAM_PERIODO,
+  PARAM_VISTA,
+  parseVista,
   POR_PAGINA,
+  VISTAS_COLABORADOR,
+  whereDeVista,
 } from "@/modules/strategy/filtros";
+import { SCORE_MINIMO_MEMORIA } from "@/modules/strategy/resultados";
 
 // ── Estado ────────────────────────────────────────────────────────────────
 
@@ -150,4 +155,81 @@ test("sirve para cualquier panel, no solo el de administración", () => {
 
 test("el tamaño de página es el que pidió el requisito", () => {
   assert.equal(POR_PAGINA, 15);
+});
+
+// ── Vistas del panel del colaborador ──────────────────────────────────────
+
+test("la vista por defecto es el trabajo en curso", () => {
+  assert.equal(parseVista(undefined), "en-curso");
+  assert.equal(parseVista(""), "en-curso");
+  assert.equal(parseVista("inventada"), "en-curso");
+});
+
+test("reconoce todas las vistas declaradas", () => {
+  for (const { valor } of VISTAS_COLABORADOR) {
+    assert.equal(parseVista(valor), valor, `${valor} debería reconocerse`);
+  }
+});
+
+test("la vista por defecto no ensucia la URL", () => {
+  assert.equal(enlacePanel("/colaborador", { vista: "en-curso" }), "/colaborador");
+  assert.equal(
+    enlacePanel("/colaborador", { vista: "por-revisar" }),
+    `/colaborador?${PARAM_VISTA}=por-revisar`,
+  );
+});
+
+test("la vista convive con el periodo y la página", () => {
+  const url = enlacePanel("/colaborador", {
+    vista: "en-memoria",
+    periodo: "30d",
+    pagina: 2,
+  });
+  const p = new URL(url, "http://x").searchParams;
+  assert.equal(p.get(PARAM_VISTA), "en-memoria");
+  assert.equal(p.get("periodo"), "30d");
+  assert.equal(p.get("pagina"), "2");
+});
+
+test("'todas' no filtra nada", () => {
+  assert.deepEqual(whereDeVista("todas"), {});
+});
+
+test("'en-curso' deja fuera las aprobadas y las archivadas", () => {
+  const w = whereDeVista("en-curso") as { status: { in: string[] } };
+  assert.deepEqual(w.status.in.sort(), ["DRAFT", "FAILED", "GENERATING", "READY"]);
+});
+
+test("'sin-valorar' son las aprobadas SIN resultado", () => {
+  // Es el trabajo pendiente que el panel escondía: aprobadas que nadie ha medido.
+  assert.deepEqual(whereDeVista("sin-valorar"), {
+    status: "APPROVED",
+    outcome: { is: null },
+  });
+});
+
+test("'por-revisar' son los resultados que esperan el visto bueno", () => {
+  assert.deepEqual(whereDeVista("por-revisar"), {
+    outcome: { is: { revisado: false } },
+  });
+});
+
+test("'en-memoria' replica las tres condiciones de BrainService", () => {
+  // Si esta vista y la consulta de la memoria divergen, el panel mentiría sobre
+  // qué está alimentando a la IA.
+  assert.deepEqual(whereDeVista("en-memoria"), {
+    outcome: {
+      is: {
+        revisado: true,
+        status: "SUCCESS",
+        performanceScore: { gte: SCORE_MINIMO_MEMORIA },
+      },
+    },
+  });
+});
+
+test("toda vista declarada produce un where", () => {
+  for (const { valor } of VISTAS_COLABORADOR) {
+    assert.ok(whereDeVista(valor) !== undefined, `${valor} sin where`);
+  }
 });

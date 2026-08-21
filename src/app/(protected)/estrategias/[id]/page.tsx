@@ -101,7 +101,7 @@ export default async function EstrategiaPage({
           <AccionRapida
             href={`/estrategias/${estrategia.id}/tablero`}
             icono="tablero"
-            titulo="Las acciones de esta estrategia en un tablero, para seguir por dónde va cada una"
+            titulo="Tablero Kanban para seguir la estrategia"
           >
             Seguimiento de Estrategia
           </AccionRapida>

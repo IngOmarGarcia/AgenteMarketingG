@@ -8,6 +8,16 @@ import type { Role } from "@prisma/client";
  * entre un textarea y el JSON de `StrategyOutcome`.
  */
 
+/**
+ * Score mínimo para que un caso entre en la memoria histórica.
+ *
+ * Vive aquí y no dentro de `BrainService` porque lo necesitan dos sitios: la
+ * consulta que alimenta el prompt y el panel del colaborador, que enseña qué
+ * casos han llegado a la memoria. Dos copias de este número se desincronizarían
+ * en cuanto alguien ajustara una.
+ */
+export const SCORE_MINIMO_MEMORIA = 70;
+
 export const ESTRELLAS_MIN = 1;
 export const ESTRELLAS_MAX = 5;
 

@@ -6,6 +6,7 @@ import {
   PERIODOS,
   POR_PAGINA,
   type Periodo,
+  type VistaColaborador,
 } from "@/modules/strategy/filtros";
 
 /**
@@ -22,6 +23,8 @@ export interface EstadoFiltros {
   readonly estado: StrategyStatus | null;
   readonly periodo: Periodo;
   readonly pagina: number;
+  /** Solo la usa el panel del colaborador; el de administración filtra por estado. */
+  readonly vista?: VistaColaborador;
 }
 
 /** Selector de periodo. Cambiarlo conserva el estado y vuelve a la página 1. */
@@ -41,6 +44,7 @@ export function FiltroPeriodo({ filtros }: { filtros: EstadoFiltros }) {
             // lista vacía que parece un fallo.
             href={enlacePanel(filtros.base, {
               estado: filtros.estado,
+              vista: filtros.vista,
               periodo: valor,
               pagina: 1,
             })}
@@ -137,6 +141,7 @@ function Salto({
     <Link
       href={enlacePanel(filtros.base, {
         estado: filtros.estado,
+        vista: filtros.vista,
         periodo: filtros.periodo,
         pagina: destino,
       })}

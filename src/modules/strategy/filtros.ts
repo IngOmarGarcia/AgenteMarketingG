@@ -1,4 +1,6 @@
-import { StrategyStatus } from "@prisma/client";
+import { OutcomeStatus, Prisma, StrategyStatus } from "@prisma/client";
+
+import { SCORE_MINIMO_MEMORIA } from "@/modules/strategy/resultados";
 
 /**
  * Filtros de los paneles: estado, periodo y página.
@@ -13,6 +15,7 @@ import { StrategyStatus } from "@prisma/client";
 export const PARAM_ESTADO = "estado";
 export const PARAM_PERIODO = "periodo";
 export const PARAM_PAGINA = "pagina";
+export const PARAM_VISTA = "vista";
 
 /** Registros por página. Menos payload y menos trabajo para Postgres. */
 export const POR_PAGINA = 15;
@@ -109,6 +112,7 @@ export interface FiltrosPanel {
   estado?: StrategyStatus | null;
   periodo?: Periodo;
   pagina?: number;
+  vista?: VistaColaborador;
 }
 
 /**
@@ -131,7 +135,114 @@ export function enlacePanel(base: string, filtros: FiltrosPanel): string {
   if (filtros.pagina && filtros.pagina > 1) {
     params.set(PARAM_PAGINA, String(filtros.pagina));
   }
+  // "en-curso" es el valor por defecto: no se escribe, igual que `periodo=todo`.
+  if (filtros.vista && filtros.vista !== "en-curso") {
+    params.set(PARAM_VISTA, filtros.vista);
+  }
 
   const query = params.toString();
   return query ? `${base}?${query}` : base;
+}
+
+// ── Vistas del panel del colaborador ──────────────────────────────────────
+
+/**
+ * El panel del colaborador es una lista de trabajo pendiente, no un archivo.
+ *
+ * Filtraba a los cuatro estados "en curso" y dejaba fuera las aprobadas. Eso
+ * tenía sentido cuando aprobar era el final del recorrido; dejó de tenerlo en
+ * cuanto una estrategia aprobada arrastró trabajo detrás —valorarla, y revisar
+ * lo que valoró el cliente— y ese trabajo quedó invisible justo en la pantalla
+ * que existe para enseñarlo.
+ *
+ * Las vistas mezclan a propósito dos dimensiones —el estado de la estrategia y
+ * el de su resultado— porque para quien trabaja son la misma pregunta: qué me
+ * toca ahora.
+ */
+export type VistaColaborador =
+  | "en-curso"
+  | "listas"
+  | "fallidas"
+  | "sin-valorar"
+  | "por-revisar"
+  | "en-memoria"
+  | "todas";
+
+const EN_CURSO: readonly StrategyStatus[] = [
+  StrategyStatus.DRAFT,
+  StrategyStatus.GENERATING,
+  StrategyStatus.READY,
+  StrategyStatus.FAILED,
+];
+
+export const VISTAS_COLABORADOR: ReadonlyArray<{
+  valor: VistaColaborador;
+  etiqueta: string;
+  ayuda: string;
+}> = [
+  { valor: "en-curso", etiqueta: "En curso", ayuda: "Sin aprobar todavía" },
+  { valor: "listas", etiqueta: "Listas", ayuda: "Generadas, esperando revisión" },
+  { valor: "fallidas", etiqueta: "Fallidas", ayuda: "La generación no terminó" },
+  {
+    valor: "sin-valorar",
+    etiqueta: "Sin valorar",
+    ayuda: "Aprobadas sin resultado registrado",
+  },
+  {
+    valor: "por-revisar",
+    etiqueta: "Por revisar",
+    ayuda: "El cliente registró un resultado y falta darlo por bueno",
+  },
+  {
+    valor: "en-memoria",
+    etiqueta: "En memoria de la IA",
+    ayuda: "Casos que ya alimentan las próximas generaciones",
+  },
+  { valor: "todas", etiqueta: "Todas", ayuda: "Sin filtrar" },
+];
+
+const VISTAS_VALIDAS = new Set<string>(VISTAS_COLABORADOR.map((v) => v.valor));
+
+export function parseVista(valor: string | string[] | undefined): VistaColaborador {
+  const crudo = Array.isArray(valor) ? valor[0] : valor;
+  const normalizado = crudo?.trim().toLowerCase();
+
+  return normalizado && VISTAS_VALIDAS.has(normalizado)
+    ? (normalizado as VistaColaborador)
+    : "en-curso";
+}
+
+/**
+ * Traduce una vista al `where` de Prisma.
+ *
+ * `en-memoria` replica exactamente las tres condiciones de
+ * `BrainService.getHistoricalMemory`. Comparten `SCORE_MINIMO_MEMORIA` para que
+ * el número no se duplique, pero las otras dos van escritas aquí: si algún día
+ * divergen, esta vista mentiría sobre qué está alimentando a la IA.
+ */
+export function whereDeVista(vista: VistaColaborador): Prisma.StrategyWhereInput {
+  switch (vista) {
+    case "todas":
+      return {};
+    case "listas":
+      return { status: StrategyStatus.READY };
+    case "fallidas":
+      return { status: StrategyStatus.FAILED };
+    case "sin-valorar":
+      return { status: StrategyStatus.APPROVED, outcome: { is: null } };
+    case "por-revisar":
+      return { outcome: { is: { revisado: false } } };
+    case "en-memoria":
+      return {
+        outcome: {
+          is: {
+            revisado: true,
+            status: OutcomeStatus.SUCCESS,
+            performanceScore: { gte: SCORE_MINIMO_MEMORIA },
+          },
+        },
+      };
+    case "en-curso":
+      return { status: { in: [...EN_CURSO] } };
+  }
 }
