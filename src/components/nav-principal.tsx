@@ -38,25 +38,28 @@ export function NavPrincipal({ email, role }: { email: string; role: Role }) {
       {/* Altura fija en vez de padding vertical: así la barra deja de medir lo
           que mida el logo y pasa a ser al revés, que es lo que permite que el
           logo la llene sin que la cabecera crezca con él. */}
-      <div className="mx-auto flex h-20 w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-24 w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         
         {/* Contenedor Izquierdo: Logo + Enlaces */}
         <div className="flex items-center gap-6">
           <Link href={rutaInicio} className="flex items-center gap-2 transition-opacity hover:opacity-80">
-            {/* Las dimensiones INTRÍNSECAS del fichero (342x340), no las que se
+            {/* Las dimensiones INTRÍNSECAS del fichero (284x214), no las que se
                 quieren en pantalla. Next las usa para reservar el hueco antes
                 de que la imagen cargue: con una proporción falsa aparta una
                 caja de otra forma y luego la encoge, empujando los enlaces del
-                menú. El tamaño real lo decide el CSS de abajo. */}
+                menú. El tamaño real lo decide el CSS de abajo.
+
+                SI SE CAMBIA EL FICHERO, HAY QUE ACTUALIZAR ESTOS DOS NÚMEROS.
+                No dan error si se quedan desfasados: solo reaparece el salto. */}
             <Image
               src="/gravita.png"
               alt="Gravita"
-              width={342}
-              height={340}
-              // h-16 dentro de una barra de h-20: llena la altura dejando un
+              width={284}
+              height={214}
+              // h-20 dentro de una barra de h-24: llena la altura dejando un
               // respiro arriba y abajo. Pegado a los bordes se leería como un
               // error de maquetación, no como un logo grande.
-              className="h-16 w-auto"
+              className="h-20 w-auto"
               priority
             />
           </Link>
