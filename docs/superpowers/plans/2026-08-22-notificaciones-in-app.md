@@ -1,7 +1,7 @@
 # Notificaciones in-app — Plan
 
 > **Para agentes:** SUB-SKILL REQUERIDA: `superpowers:subagent-driven-development`
-> o `superpowers:executing-plans`. Los pasos usan checkbox (`- [ ]`).
+> o `superpowers:executing-plans`. Los pasos usan checkbox (`- [x]`).
 
 **Spec:** [`docs/superpowers/specs/2026-08-22-notificaciones-in-app-design.md`](../specs/2026-08-22-notificaciones-in-app-design.md)
 
@@ -27,9 +27,9 @@ servidor y carga la lista al abrirse.
 
 **Files:** `prisma/schema.prisma`
 
-- [ ] **Paso 1** — `TipoNotificacion` y `Notification` según la spec; `Profile`
+- [x] **Paso 1** — `TipoNotificacion` y `Notification` según la spec; `Profile`
   gana `notificaciones Notification[]`.
-- [ ] **Paso 2** — `npm run db:generate && npm run db:push && npm run db:constraints`.
+- [x] **Paso 2** — `npm run db:generate && npm run db:push && npm run db:constraints`.
 
 ---
 
@@ -42,7 +42,7 @@ servidor y carga la lista al abrirse.
 - `formatearContador(n): string | null`
 - `TEXTOS: Record<TipoNotificacion, { titulo: string }>`
 
-- [ ] **Paso 1: Tests que fallan**
+- [x] **Paso 1: Tests que fallan**
 
 ```ts
 const CANDIDATOS = [
@@ -86,9 +86,9 @@ test("los tres tipos tienen título", () => {
 });
 ```
 
-- [ ] **Paso 2** — `npm test` → falla.
-- [ ] **Paso 3** — Implementar.
-- [ ] **Paso 4** — `npm test` → pasa.
+- [x] **Paso 2** — `npm test` → falla.
+- [x] **Paso 3** — Implementar.
+- [x] **Paso 4** — `npm test` → pasa.
 
 ---
 
@@ -98,10 +98,10 @@ test("los tres tipos tienen título", () => {
 
 **Produce:**
 - `notificar(params): Promise<void>` — nunca lanza
-- `miembrosDeEmpresa(clientId)`, `equipoDeAgencia()` — listas de candidatos
+- `candidatosDeEmpresa(clientId)`, `candidatosDelEquipo()`, `candidatoPrincipal(clientId)` — listas de candidatos
 - `contarNoLeidas(userId)`, `listarRecientes(userId)`
 
-- [ ] **Paso 1** — `notificar` envuelve todo en try/catch y registra el fallo:
+- [x] **Paso 1** — `notificar` envuelve todo en try/catch y registra el fallo:
 
 ```ts
 // Avisar es una consecuencia, no la operación. Si esto revienta, lo que no
@@ -111,7 +111,7 @@ try { await prisma.notification.createMany({ data: filas }); }
 catch (error) { console.error("[notificar] no se pudo avisar:", error); }
 ```
 
-- [ ] **Paso 2** — `listarRecientes` limita a 20 y ordena por fecha desc.
+- [x] **Paso 2** — `listarRecientes` limita a 20 y ordena por fecha desc.
 
 ---
 
@@ -122,11 +122,11 @@ catch (error) { console.error("[notificar] no se pudo avisar:", error); }
 - `src/modules/strategy/actions/generate-strategy.action.ts`
 - `src/modules/strategy/actions/registrar-resultado.action.ts`
 
-- [ ] **Paso 1** — Cada acción llama a `notificar` **después** del éxito, nunca
+- [x] **Paso 1** — Cada acción llama a `notificar` **después** del éxito, nunca
   antes ni dentro del camino de error.
-- [ ] **Paso 2** — `RESULTADO_REGISTRADO` elige destinatario según el rol de
+- [x] **Paso 2** — `RESULTADO_REGISTRADO` elige destinatario según el rol de
   quien escribe: cliente → equipo; equipo → contacto principal.
-- [ ] **Paso 3** — `npx tsc --noEmit`.
+- [x] **Paso 3** — `npx tsc --noEmit`.
 
 ---
 
@@ -137,16 +137,16 @@ catch (error) { console.error("[notificar] no se pudo avisar:", error); }
 - `src/components/campana-notificaciones.tsx`
 - `src/components/nav-principal.tsx`
 
-- [ ] **Paso 1** — Acciones. Todas filtran por `userId` de la sesión: sin eso,
+- [x] **Paso 1** — Acciones. Todas filtran por `userId` de la sesión: sin eso,
   cualquiera marcaría como leída la notificación de otro con solo su id.
-- [ ] **Paso 2** — La barra pasa el contador ya calculado en el servidor.
-- [ ] **Paso 3** — El panel carga la lista al abrirse, no en cada render.
-- [ ] **Paso 4** — `npm test && npx tsc --noEmit && npx eslint src scripts && npx next build`.
+- [x] **Paso 2** — La barra pasa el contador ya calculado en el servidor.
+- [x] **Paso 3** — El panel carga la lista al abrirse, no en cada render.
+- [x] **Paso 4** — `npm test && npx tsc --noEmit && npx eslint src scripts && npx next build`.
 
 ---
 
 ## Task 6: Verificación
 
-- [ ] **Paso 1** — Disparar los tres eventos y comprobar filas y destinatarios.
-- [ ] **Paso 2** — Comprobar que el actor no se autonotifica.
+- [x] **Paso 1** — Disparar los tres eventos y comprobar filas y destinatarios.
+- [x] **Paso 2** — Comprobar que el actor no se autonotifica.
 - [ ] **Paso 3** — Recorrido manual en navegador.

@@ -8,6 +8,10 @@ import { StrategyStatus } from "@prisma/client";
 import { requireRole } from "@/lib/auth/dal";
 import { prisma } from "@/lib/prisma";
 import { puedeAprobarse } from "@/modules/strategy/transiciones";
+import {
+  candidatosDeEmpresa,
+  notificar,
+} from "@/modules/notificaciones/notificaciones.service";
 
 /**
  * Aprobación de una estrategia: `READY → APPROVED`.
@@ -29,7 +33,7 @@ export async function aprobarEstrategiaAction(
   _prev: AprobarResultado | null,
   formData: FormData,
 ): Promise<AprobarResultado> {
-  await requireRole("ADMIN", "COLABORADOR");
+  const session = await requireRole("ADMIN", "COLABORADOR");
 
   const id = String(formData.get("estrategiaId") ?? "").trim();
   if (!id) return { ok: false, mensaje: "Falta el identificador." };
@@ -63,6 +67,18 @@ export async function aprobarEstrategiaAction(
       mensaje: "Alguien cambió el estado mientras revisabas. Recarga la página.",
     };
   }
+
+  // Después del éxito, nunca antes. `notificar` no lanza: si falla, se registra
+  // y el usuario sigue viendo que su estrategia quedó aprobada. Avisar es la
+  // consecuencia, no la operación.
+  await notificar({
+    candidatos: await candidatosDeEmpresa(estrategia.clientId),
+    actorId: session.userId,
+    tipo: "ESTRATEGIA_PUBLICADA",
+    titulo: "Nueva estrategia publicada",
+    mensaje: `Ya puedes consultar «${estrategia.title}».`,
+    enlace: `/estrategias/${id}`,
+  });
 
   // Las cuatro vistas donde este cambio se nota: el detalle, el panel con sus
   // contadores, la cola del colaborador y la lista del propio cliente.

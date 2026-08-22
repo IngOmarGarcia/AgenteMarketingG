@@ -16,6 +16,11 @@ import {
   ESTRELLAS_MAX,
   ESTRELLAS_MIN,
 } from "@/modules/strategy/resultados";
+import {
+  candidatoPrincipal,
+  candidatosDelEquipo,
+  notificar,
+} from "@/modules/notificaciones/notificaciones.service";
 
 /**
  * Registro del resultado real de una estrategia.
@@ -136,9 +141,28 @@ export async function registrarResultadoAction(
     update: datos,
   });
 
+  // Asimétrico a propósito: se avisa al OTRO lado. Si escribe el cliente, el
+  // equipo tiene algo que revisar antes de que entre en la memoria de la IA;
+  // si escribe el equipo, el cliente se entera de que se midió lo suyo.
+  // Notificar siempre a ambos duplicaría avisos sobre lo que uno acaba de hacer.
+  const esCliente = session.role === "CLIENTE";
+  await notificar({
+    candidatos: esCliente
+      ? await candidatosDelEquipo()
+      : await candidatoPrincipal(estrategia.clientId),
+    actorId: session.userId,
+    tipo: "RESULTADO_REGISTRADO",
+    titulo: esCliente ? "Resultado por revisar" : "Resultado registrado",
+    mensaje: esCliente
+      ? "Un cliente registró el resultado de su estrategia y falta darlo por bueno."
+      : "El equipo ha registrado el resultado de una de tus estrategias.",
+    enlace: `/estrategias/${strategyId}/resultado`,
+  });
+
   revalidatePath(`/estrategias/${strategyId}`);
   revalidatePath(`/estrategias/${strategyId}/resultado`);
   revalidatePath("/admin");
+  revalidatePath("/colaborador");
 
   const califica = datos.performanceScore >= 70 && datos.status === "SUCCESS";
 

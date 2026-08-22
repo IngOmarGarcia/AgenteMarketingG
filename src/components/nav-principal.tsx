@@ -2,8 +2,10 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Role } from "@prisma/client";
 
+import { CampanaNotificaciones } from "@/components/campana-notificaciones";
 import { CerrarSesionBoton } from "@/components/cerrar-sesion-boton";
 import { EnlacesNav } from "@/components/enlaces-nav";
+import { contarNoLeidas } from "@/modules/notificaciones/notificaciones.service";
 
 /** Enlaces visibles por rol. La navegación no es seguridad: cada ruta se
  *  protege igualmente en su propio layout. Esto solo evita enseñar enlaces
@@ -30,9 +32,22 @@ const ETIQUETA_ROL: Readonly<Record<Role, string>> = {
   CLIENTE: "Cliente",
 };
 
-export function NavPrincipal({ email, role }: { email: string; role: Role }) {
+export async function NavPrincipal({
+  userId,
+  email,
+  role,
+}: {
+  userId: string;
+  email: string;
+  role: Role;
+}) {
   // Determina a dónde redirige el logo al hacer clic según el rol
   const rutaInicio = role === "CLIENTE" ? "/cliente" : role === "ADMIN" ? "/admin" : "/colaborador";
+
+  // Se cuenta aquí, en el servidor, y no en la campana al hidratar: así el
+  // número sale ya correcto en el primer pintado. Es un `count` sobre el
+  // prefijo del índice, no trae ni una fila.
+  const noLeidas = await contarNoLeidas(userId);
 
   return (
     <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
@@ -79,6 +94,7 @@ export function NavPrincipal({ email, role }: { email: string; role: Role }) {
           <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
             {ETIQUETA_ROL[role]}
           </span>
+          <CampanaNotificaciones noLeidasIniciales={noLeidas} />
           <CerrarSesionBoton />
         </div>
 

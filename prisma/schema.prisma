@@ -110,6 +110,7 @@ model Profile {
   client Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
 
   tareasAsignadas StrategyTask[]
+  notificaciones  Notification[]
 
   @@index([role])
   @@index([clientId])
@@ -248,4 +249,38 @@ model StrategyOutcome {
   /// índice y Postgres resuelve filtro y orden con un solo index scan.
   @@index([sector, status, revisado, usarEnMemoriaIA, performanceScore(sort: Desc)])
   @@index([measuredAt(sort: Desc)])
+}
+
+enum TipoNotificacion {
+  ESTRATEGIA_PUBLICADA
+  ESTRATEGIA_GENERADA
+  RESULTADO_REGISTRADO
+}
+
+/// Aviso dentro de la aplicación. Sin correo ni terceros.
+///
+/// UNA FILA POR DESTINATARIO. Cuando un aviso va a cinco personas se crean
+/// cinco filas. La alternativa —una notificación con muchos lectores— obliga a
+/// una tabla de unión solo para responder "¿cuántas me quedan sin leer?", que
+/// es justo la consulta que se hace en cada render de la barra.
+model Notification {
+  id     String           @id @default(cuid())
+  userId String
+  tipo   TipoNotificacion
+
+  titulo  String
+  mensaje String @db.Text
+
+  /// Ruta interna a la que lleva el aviso. Sin esto obliga a buscar a mano lo
+  /// que anuncia, que es el problema que estas notificaciones vienen a evitar.
+  enlace String?
+
+  leida     Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Cubre las dos consultas que existen: contar las no leídas de alguien
+  /// —igualdades en prefijo— y listar las suyas por fecha.
+  @@index([userId, leida, createdAt(sort: Desc)])
 }

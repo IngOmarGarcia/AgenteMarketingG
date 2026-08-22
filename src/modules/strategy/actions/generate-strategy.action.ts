@@ -8,6 +8,10 @@ import { puedeGenerarPara } from "@/lib/auth/policy";
 import { CompetitiveAnalysisSchema } from "@/modules/ai-core/schemas/input.schema";
 import type { StrategyOutput } from "@/modules/ai-core/schemas/strategy.schema";
 import { strategyService } from "@/modules/strategy/services/strategy.service";
+import {
+  candidatosDelEquipo,
+  notificar,
+} from "@/modules/notificaciones/notificaciones.service";
 
 /**
  * Superficie pública de generación de estrategias.
@@ -106,6 +110,16 @@ export async function generateStrategyAction(
       retryable: result.error.retryable,
     };
   }
+
+  // Al equipo, no a quien generó: ya está mirando el resultado en pantalla.
+  await notificar({
+    candidatos: await candidatosDelEquipo(),
+    actorId: session.userId,
+    tipo: "ESTRATEGIA_GENERADA",
+    titulo: "Estrategia lista para revisar",
+    mensaje: `«${result.data.title}» acaba de generarse y espera aprobación.`,
+    enlace: `/estrategias/${result.data.strategyId}`,
+  });
 
   // Las dos vistas que listan estrategias. `/clients/<id>` no existe en el
   // árbol de rutas, así que revalidarla no refrescaba nada.

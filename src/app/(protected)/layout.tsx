@@ -19,7 +19,11 @@ export default async function ProtectedLayout({
 
   return (
     <div className="flex min-h-full flex-col">
-      <NavPrincipal email={session.email} role={session.role} />
+      <NavPrincipal
+        userId={session.userId}
+        email={session.email}
+        role={session.role}
+      />
       {/* 1400px en lugar de max-w-6xl (1152px): en un monitor de 1920 aquello
           dejaba casi 400px muertos a cada lado. El tope sigue existiendo porque
           sin él las líneas de texto se vuelven ilegibles de tan largas.
