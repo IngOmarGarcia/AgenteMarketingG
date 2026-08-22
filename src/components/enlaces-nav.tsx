@@ -35,7 +35,7 @@ export function EnlacesNav({ enlaces }: { enlaces: readonly EnlaceNav[] }) {
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   return (
-    <nav className="flex items-center gap-2">
+    <nav className="flex items-center gap-6">
       {enlaces.map((e) => {
         const esActivo = e.href === activo;
 
@@ -44,10 +44,18 @@ export function EnlacesNav({ enlaces }: { enlaces: readonly EnlaceNav[] }) {
             key={e.href}
             href={e.href}
             aria-current={esActivo ? "page" : undefined}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+            // Subrayado en vez de píldora rellena. Una píldora con sombra se lee
+            // como un botón —algo que hace cosas— y estos enlaces solo dicen
+            // dónde estás. El borde inferior los ata a la barra en lugar de
+            // ponerlos encima de ella.
+            //
+            // El borde existe SIEMPRE, transparente cuando no toca: si apareciera
+            // solo en el activo, el texto daría un salto de dos píxeles al
+            // cambiar de sección.
+            className={`border-b-2 pb-1.5 text-sm font-medium transition-colors ${
               esActivo
-                ? "bg-[var(--primary)] text-[var(--primary-foreground)] shadow-[0_4px_14px_rgba(37,99,235,0.4)]"
-                : "opacity-70 hover:bg-white/10 hover:opacity-100"
+                ? "border-[var(--acento)] text-[var(--acento)]"
+                : "border-transparent opacity-65 hover:opacity-100"
             }`}
           >
             {e.label}

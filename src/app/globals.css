@@ -5,6 +5,16 @@
   --foreground: #04236b;
   --primary: #2563eb;
   --primary-foreground: #ffffff;
+
+  /* Acento de marca: morado azulado, tomado del propio logo.
+     Muestreando gravita.png, sus colores dominantes con saturación son
+     #4860a8, #5460a8 y #7878b4 — todos en la misma familia azul-violeta.
+     Este valor es esa familia aclarada lo justo para leerse como indicador
+     sobre el degradado oscuro del fondo.
+     Se mantiene aparte de --primary: aquel es el azul de las acciones
+     (botones, foco) y este solo señala dónde estás. */
+  --acento: #8b84e3;
+
   /* Fondo translúcido para efecto cristal en modo claro */
   --card-bg: rgba(255, 255, 255, 0.7); 
   --card-border: rgba(226, 232, 240, 0.8);
@@ -16,6 +26,7 @@
     --foreground: #f1f5f9;
     --primary: #3b82f6;
     --primary-foreground: #ffffff;
+    --acento: #9b95e9;
     /* Fondo translúcido para modo oscuro */
     --card-bg: rgba(20, 50, 110, 0.45); 
     --card-border: rgba(255, 255, 255, 0.12);
