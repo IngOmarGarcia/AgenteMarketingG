@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "next lint",
     "test": "tsx --env-file=.env.test --test \"src/**/*.test.ts\"",
     "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate",
