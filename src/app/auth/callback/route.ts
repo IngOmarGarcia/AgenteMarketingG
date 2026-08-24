@@ -24,8 +24,19 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get("type");
   const next = searchParams.get("next");
 
+  // Sin `code` NO es un error: es el otro flujo. Los enlaces de correo
+  // (invitación, recuperación) vuelven de Supabase con la sesión en el
+  // fragmento —`#access_token=…`—, y el fragmento no llega al servidor. Se pasa
+  // la pelota a una página de cliente, que sí puede leerlo; el navegador
+  // reengancha el fragmento al destino de esta redirección.
+  //
+  // Antes esto mandaba a `/login?error=callback`, así que aceptar una
+  // invitación terminaba en la pantalla de acceso sin explicación.
   if (!code) {
-    return NextResponse.redirect(`${origin}/login?error=callback`);
+    const traspaso = new URL("/auth/confirmar", origin);
+    if (type) traspaso.searchParams.set("type", type);
+    if (next) traspaso.searchParams.set("next", next);
+    return NextResponse.redirect(traspaso);
   }
 
   const supabase = await createSupabaseServerClient();
