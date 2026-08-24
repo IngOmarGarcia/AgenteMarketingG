@@ -15,6 +15,7 @@ import {
   revisadoTrasEscritura,
   ESTRELLAS_MAX,
   ESTRELLAS_MIN,
+  MAX_MOTIVO_CHARS,
 } from "@/modules/strategy/resultados";
 import {
   candidatoPrincipal,
@@ -233,6 +234,7 @@ export async function marcarResultadoRevisadoAction(
  */
 export async function alternarUsoEnMemoriaAction(
   strategyId: string,
+  formData?: FormData,
 ): Promise<ResultadoAccion> {
   await requireRole("ADMIN", "COLABORADOR");
 
@@ -247,9 +249,25 @@ export async function alternarUsoEnMemoriaAction(
 
   const encender = !actual.usarEnMemoriaIA;
 
+  // El motivo solo tiene sentido al retirar. Se recorta porque es una nota, no
+  // un informe: sin tope, un pegado accidental deja un muro de texto en una
+  // tarjeta pensada para una línea.
+  const motivo = String(formData?.get("motivo") ?? "")
+    .trim()
+    .slice(0, MAX_MOTIVO_CHARS);
+
   await prisma.strategyOutcome.update({
     where: { strategyId },
-    data: { usarEnMemoriaIA: encender },
+    data: encender
+      ? // Al reactivar se borran motivo y fecha. Un "retirada porque ya no
+        // aplica" colgando de un caso que SÍ alimenta la memoria dice lo
+        // contrario de lo que ocurre.
+        { usarEnMemoriaIA: true, motivoExclusionIA: null, excluidaDeIAEn: null }
+      : {
+          usarEnMemoriaIA: false,
+          motivoExclusionIA: motivo === "" ? null : motivo,
+          excluidaDeIAEn: new Date(),
+        },
   });
 
   revalidatePath(`/estrategias/${strategyId}/resultado`);

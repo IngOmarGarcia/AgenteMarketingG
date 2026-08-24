@@ -58,6 +58,8 @@ export default async function ResultadoPage({
           measuredAt: true,
           revisado: true,
           usarEnMemoriaIA: true,
+          motivoExclusionIA: true,
+          excluidaDeIAEn: true,
         },
       },
     },
@@ -207,6 +209,36 @@ export default async function ResultadoPage({
                   ? "Está revisado, pero no llega al umbral: la memoria solo usa casos de éxito de 4 estrellas o más."
                   : "El equipo lo ha retirado del contexto de la IA. El cliente lo sigue viendo con normalidad."}
             </p>
+
+            {/* El porqué de la retirada. Se enseña a todos los que llegan a
+                esta pantalla, no solo al equipo: la pregunta "¿y por qué está
+                fuera?" es justo la que este campo existe para contestar, y
+                esconderla dejaría el dato guardado y sin usar. */}
+            {!o.usarEnMemoriaIA && o.motivoExclusionIA && (
+              <figure className="mt-3 border-l-2 border-amber-400/50 pl-3">
+                <blockquote className="text-sm opacity-90">
+                  «{o.motivoExclusionIA}»
+                </blockquote>
+                {o.excluidaDeIAEn && (
+                  <figcaption className="mt-1 text-xs opacity-60">
+                    Retirada el{" "}
+                    {o.excluidaDeIAEn.toLocaleDateString("es-ES", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </figcaption>
+                )}
+              </figure>
+            )}
+
+            {/* Retirada sin nota: se dice, en lugar de callar. Un hueco vacío
+                se lee como que nadie la retiró. */}
+            {!o.usarEnMemoriaIA && !o.motivoExclusionIA && (
+              <p className="mt-3 text-xs opacity-55">
+                No se registró un motivo al retirarla.
+              </p>
+            )}
 
             {/* Solo el equipo, y solo si el caso califica: ofrecer el
                 interruptor sobre un caso de 2 estrellas prometería un efecto

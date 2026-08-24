@@ -229,6 +229,55 @@ test("'en-memoria' replica las cuatro condiciones de BrainService", () => {
   });
 });
 
+test("'lista-para-ia' es 'en-memoria' con la revisión pendiente", () => {
+  // Es la vista de trabajo: lo único que le falta a cada una de estas para
+  // alimentar la memoria es que alguien la mire. Si divergiera de `en-memoria`
+  // en algo más que `revisado`, prometería un efecto que luego no ocurre.
+  const lista = whereDeVista("lista-para-ia");
+  const memoria = whereDeVista("en-memoria");
+
+  assert.deepEqual(lista, {
+    outcome: {
+      is: {
+        revisado: false,
+        usarEnMemoriaIA: true,
+        status: "SUCCESS",
+        performanceScore: { gte: SCORE_MINIMO_MEMORIA },
+      },
+    },
+  });
+
+  // La diferencia es EXACTAMENTE `revisado` y nada más.
+  const sinRevisado = (w: unknown) => {
+    const is = { ...(w as { outcome: { is: Record<string, unknown> } }).outcome.is };
+    delete is.revisado;
+    return is;
+  };
+  assert.deepEqual(sinRevisado(lista), sinRevisado(memoria));
+});
+
+test("'fuera-de-ia' no filtra por nota ni por estado", () => {
+  // Deliberado: una retirada es una decisión del equipo y tiene que verse
+  // aunque el caso no calificara igualmente. Añadir el umbral aquí escondería
+  // justo las que se retiraron por malas.
+  assert.deepEqual(whereDeVista("fuera-de-ia"), {
+    outcome: { is: { usarEnMemoriaIA: false } },
+  });
+});
+
+test("las tres vistas de IA no se solapan entre sí", () => {
+  // Una estrategia no puede salir en dos a la vez: 'en-memoria' y
+  // 'lista-para-ia' se excluyen por `revisado`, y 'fuera-de-ia' por el
+  // interruptor, que las otras dos exigen en `true`.
+  const is = (v: Parameters<typeof whereDeVista>[0]) =>
+    (whereDeVista(v) as { outcome: { is: Record<string, unknown> } }).outcome.is;
+
+  assert.notEqual(is("en-memoria").revisado, is("lista-para-ia").revisado);
+  assert.equal(is("fuera-de-ia").usarEnMemoriaIA, false);
+  assert.equal(is("en-memoria").usarEnMemoriaIA, true);
+  assert.equal(is("lista-para-ia").usarEnMemoriaIA, true);
+});
+
 test("toda vista declarada produce un where", () => {
   for (const { valor } of VISTAS_COLABORADOR) {
     assert.ok(whereDeVista(valor) !== undefined, `${valor} sin where`);

@@ -72,6 +72,7 @@ export default async function ColaboradorPage({
             performanceScore: true,
             revisado: true,
             usarEnMemoriaIA: true,
+            motivoExclusionIA: true,
             status: true,
           },
         },
@@ -195,14 +196,34 @@ export default async function ColaboradorPage({
                           En memoria de la IA
                         </span>
                       ) : (
-                        <span className="rounded-full bg-white/10 px-2 py-0.5 ring-1 ring-white/20">
-                          {/* Distingue "el equipo lo retiró" de "no llega al
-                              umbral": son decisiones distintas y quien mira el
-                              panel necesita saber cuál de las dos fue. */}
-                          {e.outcome.usarEnMemoriaIA
-                            ? "Revisado"
-                            : "Fuera de la IA"}
-                        </span>
+                        /* Distingue "el equipo lo retiró" de "no llega al
+                           umbral": son decisiones distintas y quien mira el
+                           panel necesita saber cuál de las dos fue. La retirada
+                           se tiñe de ámbar porque es una decisión de alguien,
+                           no una consecuencia del umbral. */
+                        e.outcome.usarEnMemoriaIA ? (
+                          <span className="rounded-full bg-white/10 px-2 py-0.5 ring-1 ring-white/20">
+                            Revisado
+                          </span>
+                        ) : (
+                          <span
+                            // El motivo en el tooltip y no en la tarjeta: en una
+                            // lista de quince, quince notas de dos líneas tapan
+                            // justo lo que se venía a mirar. El texto completo
+                            // está en el detalle.
+                            title={
+                              e.outcome.motivoExclusionIA
+                                ? `Retirada de la IA: ${e.outcome.motivoExclusionIA}`
+                                : "Retirada de la IA sin motivo registrado"
+                            }
+                            className="rounded-full bg-amber-500/20 px-2 py-0.5 ring-1 ring-amber-400/40"
+                          >
+                            Fuera de la IA
+                            {e.outcome.motivoExclusionIA && (
+                              <span className="ml-1 opacity-70">·</span>
+                            )}
+                          </span>
+                        )
                       )}
                     </>
                   ) : (

@@ -35,6 +35,15 @@ export const MAX_KPIS = 6;
 export const MAX_KPI_CHARS = 40;
 
 /**
+ * Tope del motivo por el que se retira un caso de la memoria de la IA.
+ *
+ * Es una nota, no un informe: cabe "el cliente era atípico" o "la táctica dejó
+ * de ser legal". Sin tope, un pegado accidental deja un muro de texto en una
+ * tarjeta pensada para una línea.
+ */
+export const MAX_MOTIVO_CHARS = 280;
+
+/**
  * 1–5 estrellas → 20/40/60/80/100.
  *
  * La escala no es arbitraria: la memoria histórica exige `performanceScore >= 70`,

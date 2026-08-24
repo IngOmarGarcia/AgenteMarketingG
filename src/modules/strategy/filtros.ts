@@ -165,7 +165,9 @@ export type VistaColaborador =
   | "fallidas"
   | "sin-valorar"
   | "por-revisar"
+  | "lista-para-ia"
   | "en-memoria"
+  | "fuera-de-ia"
   | "todas";
 
 const EN_CURSO: readonly StrategyStatus[] = [
@@ -194,9 +196,20 @@ export const VISTAS_COLABORADOR: ReadonlyArray<{
     ayuda: "El cliente registró un resultado y falta darlo por bueno",
   },
   {
+    valor: "lista-para-ia",
+    etiqueta: "Listas para la IA",
+    ayuda:
+      "Valoradas y con nota suficiente, pero aún sin revisar: en cuanto se revisen entran en la memoria",
+  },
+  {
     valor: "en-memoria",
     etiqueta: "En memoria de la IA",
     ayuda: "Casos que ya alimentan las próximas generaciones",
+  },
+  {
+    valor: "fuera-de-ia",
+    etiqueta: "Retiradas de la IA",
+    ayuda: "El equipo las excluyó del contexto. El cliente las sigue viendo igual",
   },
   { valor: "todas", etiqueta: "Todas", ayuda: "Sin filtrar" },
 ];
@@ -232,6 +245,20 @@ export function whereDeVista(vista: VistaColaborador): Prisma.StrategyWhereInput
       return { status: StrategyStatus.APPROVED, outcome: { is: null } };
     case "por-revisar":
       return { outcome: { is: { revisado: false } } };
+    case "lista-para-ia":
+      // Las MISMAS condiciones que `en-memoria` salvo `revisado`. Es lo que la
+      // convierte en una lista de trabajo: todo lo que le falta a cada una de
+      // estas para alimentar la memoria es que alguien del equipo la mire.
+      return {
+        outcome: {
+          is: {
+            revisado: false,
+            usarEnMemoriaIA: true,
+            status: OutcomeStatus.SUCCESS,
+            performanceScore: { gte: SCORE_MINIMO_MEMORIA },
+          },
+        },
+      };
     case "en-memoria":
       return {
         outcome: {
@@ -243,6 +270,13 @@ export function whereDeVista(vista: VistaColaborador): Prisma.StrategyWhereInput
           },
         },
       };
+    case "fuera-de-ia":
+      // Solo el interruptor, sin el umbral ni el estado. Una retirada es una
+      // decisión deliberada del equipo y tiene que verse aunque el caso no
+      // calificara igualmente: si se filtrara además por nota, las que se
+      // retiraron por malas desaparecerían de la única vista que existe para
+      // rendir cuentas de lo retirado.
+      return { outcome: { is: { usarEnMemoriaIA: false } } };
     case "en-curso":
       return { status: { in: [...EN_CURSO] } };
   }

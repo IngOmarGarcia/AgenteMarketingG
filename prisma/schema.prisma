@@ -242,6 +242,26 @@ model StrategyOutcome {
   /// estrategia; apagar esto la retira del contexto de la IA y de nada más.
   usarEnMemoriaIA Boolean @default(true)
 
+  /// Por qué se retiró este caso del contexto de la IA.
+  ///
+  /// Sin esto, `usarEnMemoriaIA = false` es una decisión sin autor ni motivo:
+  /// meses después nadie recuerda si se retiró porque el mercado cambió, porque
+  /// el cliente era atípico o por un error que ya se corrigió, y la única salida
+  /// es volver a encenderla a ver qué pasa.
+  ///
+  /// Opcional: obligar a justificar cada retirada convertiría un gesto de
+  /// criterio en un trámite, y la gente escribiría "x" para pasar.
+  ///
+  /// Se BORRA al volver a encender el caso. Un motivo de retirada colgando de
+  /// una estrategia que sí alimenta la memoria dice justo lo contrario de lo que
+  /// pasa; el historial de idas y venidas, si algún día hace falta, pide una
+  /// tabla aparte y no un campo que miente.
+  motivoExclusionIA String? @db.Text
+
+  /// Cuándo se retiró. Va con `motivoExclusionIA` y se borra con él: un motivo
+  /// sin fecha no se puede situar respecto a lo que pasó alrededor.
+  excluidaDeIAEn DateTime?
+
   strategy Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
 
   /// Las cuatro igualdades —`sector`, `status`, `revisado` y `usarEnMemoriaIA`—
