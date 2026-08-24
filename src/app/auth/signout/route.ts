@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { createSupabaseServerClient } from "@/lib/auth/supabase-server";
+import { urlPublicaBase } from "@/lib/url-publica";
 
 /**
  * Cierre de sesión forzado, para cuando la sesión existe pero no es utilizable
@@ -23,7 +24,11 @@ import { createSupabaseServerClient } from "@/lib/auth/supabase-server";
 const MOTIVOS = new Set(["no_profile", "inactive"]);
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = request.nextUrl;
+  const { searchParams } = request.nextUrl;
+
+  // Igual que en el callback: detrás de un proxy, `nextUrl.origin` es el
+  // destino interno de la función, no el sitio público.
+  const origin = (await urlPublicaBase()) ?? request.nextUrl.origin;
   const motivo = searchParams.get("reason") ?? "";
 
   const supabase = await createSupabaseServerClient();

@@ -17,6 +17,12 @@ const envSchema = z.object({
   /** Obligatoria solo con AI_PROVIDER=anthropic. Ver el superRefine de abajo. */
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
 
+  /**
+   * URL pública del despliegue, para los enlaces que salen por correo.
+   * Opcional: sin ella se deduce de las cabeceras. Ver `url-publica.ts`.
+   */
+  APP_URL: z.string().url().optional().or(z.literal("")),
+
   NEXT_PUBLIC_SUPABASE_URL: z
     .string()
     .url("NEXT_PUBLIC_SUPABASE_URL debe ser una URL completa (https://<ref>.supabase.co)"),

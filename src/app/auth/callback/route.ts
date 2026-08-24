@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { createSupabaseServerClient } from "@/lib/auth/supabase-server";
+import { urlPublicaBase } from "@/lib/url-publica";
 
 /**
  * Punto de aterrizaje de todo lo que llega por email: invitación, magic link y
@@ -11,7 +12,14 @@ import { createSupabaseServerClient } from "@/lib/auth/supabase-server";
  * cookies; en un Server Component la escritura está prohibida.
  */
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = request.nextUrl;
+  const { searchParams } = request.nextUrl;
+
+  // `request.nextUrl.origin` NO sirve detrás de un proxy: apunta al destino
+  // interno de la función, no al sitio público. Redirigir ahí devolvía al
+  // usuario a una dirección que no existe para él justo después de canjear
+  // bien su invitación.
+  const origin = (await urlPublicaBase()) ?? request.nextUrl.origin;
+
   const code = searchParams.get("code");
   const type = searchParams.get("type");
   const next = searchParams.get("next");

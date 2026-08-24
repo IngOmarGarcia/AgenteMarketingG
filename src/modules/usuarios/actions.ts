@@ -2,12 +2,12 @@
 
 import "server-only";
 
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/dal";
 import { puedeInvitarMiembros } from "@/lib/auth/policy";
 import { prisma } from "@/lib/prisma";
+import { urlPublica } from "@/lib/url-publica";
 import { createSupabaseAdminClient } from "@/lib/auth/supabase-admin";
 import {
   CambiarRolSchema,
@@ -73,10 +73,14 @@ export async function invitarUsuarioAction(
   }
 
   // El enlace del email debe volver a ESTE despliegue, no a un host fijo.
-  const cabeceras = await headers();
-  const host = cabeceras.get("x-forwarded-host") ?? cabeceras.get("host");
-  const protocolo = cabeceras.get("x-forwarded-proto") ?? "http";
-  const redirectTo = `${protocolo}://${host}/auth/callback?type=invite`;
+  const redirectTo = await urlPublica("/auth/callback?type=invite");
+  if (redirectTo === null) {
+    return {
+      ok: false,
+      mensaje:
+        "No se pudo determinar la dirección pública del sitio, así que el enlace del correo no llevaría a ninguna parte. Define APP_URL en el entorno.",
+    };
+  }
 
   const servicio = new UsuariosService(prisma, crearAuthAdminPort());
   const resultado = await servicio.invitar(parsed.data, { redirectTo });
@@ -188,10 +192,15 @@ export async function invitarMiembroAction(
     return { ok: false, mensaje: parsed.error.issues[0].message };
   }
 
-  const cabeceras = await headers();
-  const host = cabeceras.get("x-forwarded-host") ?? cabeceras.get("host");
-  const protocolo = cabeceras.get("x-forwarded-proto") ?? "http";
-  const redirectTo = `${protocolo}://${host}/auth/callback?type=invite`;
+  // El enlace del email debe volver a ESTE despliegue, no a un host fijo.
+  const redirectTo = await urlPublica("/auth/callback?type=invite");
+  if (redirectTo === null) {
+    return {
+      ok: false,
+      mensaje:
+        "No se pudo determinar la dirección pública del sitio, así que el enlace del correo no llevaría a ninguna parte. Define APP_URL en el entorno.",
+    };
+  }
 
   const servicio = new UsuariosService(prisma, crearAuthAdminPort());
   const resultado = await servicio.invitar(
