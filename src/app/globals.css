@@ -274,3 +274,70 @@ body {
     transform: none;
   }
 }
+
+/* --- IMPRESIÓN / GUARDAR COMO PDF ---
+   El botón "Descargar PDF" abre el diálogo del navegador; esto le dice CÓMO
+   tiene que salir. Sin este bloque el PDF sale con el fondo oscuro, la barra
+   de navegación y los botones dentro: un pantallazo, no un documento.
+
+   Se imprime en claro a propósito. El vidrio translúcido sobre degradado es
+   una decisión de pantalla; en papel se lee mal, gasta tinta y no aporta
+   nada. */
+@media print {
+  /* El degradado animado del body y cualquier fondo de página fuera. */
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    animation: none !important;
+  }
+
+  /* Fuera todo lo que no es el documento: la barra de navegación, la fila de
+     acciones y los avisos de interfaz. Un enlace de "volver" no significa nada
+     en papel. Se marcan con `no-imprimir` allí donde se usan. */
+  .no-imprimir {
+    display: none !important;
+  }
+
+  /* Las tarjetas de vidrio pasan a bloques con un filete. El desenfoque y la
+     sombra no existen en papel: solo emborronan. */
+  .glass-card {
+    background: #fff !important;
+    color: #000 !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transform: none !important;
+  }
+
+  /* La opacidad baja es jerarquía en pantalla; en papel es texto ilegible. */
+  [class*="opacity-"] {
+    opacity: 1 !important;
+  }
+
+  /* El contenedor deja de estar limitado: el ancho lo pone el papel. */
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  /* Una sección partida entre dos páginas se lee fatal. Se pide que no se
+     rompa; si una no cabe entera, el navegador la parte igual y es lo
+     correcto. */
+  section,
+  li,
+  .glass-card {
+    break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  /* Márgenes del papel. 1.5cm deja sitio para grapar sin comerse texto. */
+  @page {
+    margin: 1.5cm;
+  }
+}

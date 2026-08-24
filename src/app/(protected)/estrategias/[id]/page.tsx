@@ -19,6 +19,7 @@ import {
   DesaprobarBoton,
 } from "@/app/(protected)/estrategias/[id]/aprobar-boton";
 import { AccionRapida } from "@/components/accion-rapida";
+import { DescargarPdfBoton } from "@/app/(protected)/estrategias/[id]/descargar-pdf-boton";
 
 /**
  * Detalle de una estrategia. Abierta a los tres roles: quién ve qué lo decide
@@ -71,7 +72,7 @@ export default async function EstrategiaPage({
         {esDelEquipo && (
           <Link
             href={`/empresas/${estrategia.clientId}`}
-            className="text-sm opacity-70 hover:underline"
+            className="no-imprimir text-sm opacity-70 hover:underline"
           >
             ← {estrategia.client.name}
           </Link>
@@ -96,7 +97,12 @@ export default async function EstrategiaPage({
 
           Las acciones destructivas o consecuentes van al final, para que el
           gesto por defecto no sea el irreversible. */}
-      <div className="flex flex-wrap items-start gap-3">
+      <div className="no-imprimir flex flex-wrap items-start gap-3">
+        {/* Solo cuando hay algo que imprimir: una estrategia generándose o
+            fallida no tiene contenido, y el PDF saldría vacío. */}
+        {estrategia.status !== StrategyStatus.GENERATING &&
+          estrategia.status !== StrategyStatus.FAILED && <DescargarPdfBoton />}
+
         {estrategia.status === StrategyStatus.APPROVED && (
           <AccionRapida
             href={`/estrategias/${estrategia.id}/tablero`}
@@ -131,7 +137,7 @@ export default async function EstrategiaPage({
           enseña al cliente, y esa consecuencia no debería descubrirse después
           de haber pulsado. */}
       {esDelEquipo && puedeAprobarse(estrategia.status).permitida && (
-        <p className="-mt-4 text-sm opacity-70">
+        <p className="no-imprimir -mt-4 text-sm opacity-70">
           El cliente todavía no ve esta estrategia. Publicarla es lo que se la
           enseña.
         </p>

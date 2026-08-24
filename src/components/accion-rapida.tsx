@@ -25,7 +25,12 @@ export const CLASES_ACCION_RIESGO =
 export const CLASES_ACCION_PRINCIPAL =
   "inline-flex items-center gap-2 rounded-lg border border-emerald-400/40 bg-emerald-500/15 px-3.5 py-2 text-sm font-medium whitespace-nowrap transition hover:border-emerald-400/80 hover:bg-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-60";
 
-export type NombreIcono = "tablero" | "resultado" | "publicar" | "retirar";
+export type NombreIcono =
+  | "tablero"
+  | "resultado"
+  | "publicar"
+  | "retirar"
+  | "descargar";
 
 /**
  * Iconos en SVG embebido.
@@ -78,6 +83,15 @@ export function IconoAccion({ nombre }: { nombre: NombreIcono }) {
         <svg {...comun}>
           <path d="M3 12a9 9 0 1 0 3-6.7" />
           <path d="M3 4v5h5" />
+        </svg>
+      );
+    case "descargar":
+      // Flecha hacia una bandeja: el gesto universal de descargar.
+      return (
+        <svg {...comun}>
+          <path d="M12 3v12" />
+          <path d="m7 10 5 5 5-5" />
+          <path d="M5 21h14" />
         </svg>
       );
   }

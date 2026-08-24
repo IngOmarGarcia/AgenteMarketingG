@@ -50,7 +50,7 @@ export async function NavPrincipal({
   const noLeidas = await contarNoLeidas(userId);
 
   return (
-    <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+    <header className="no-imprimir border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
       {/* Mismo ancho y mismo padding que el <main> del layout: si la cabecera y
           el contenido no comparten la caja, los enlaces quedan desalineados con
           los títulos de debajo y se nota. */}
